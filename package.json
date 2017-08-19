@@ -1,5 +1,5 @@
 {
-  "name": "walipini_model",
+  "name": "walipini-viewer",
   "description": "3D model skectch for walipini simulator",
   "version": "2.0.0",
   "keywords": [
@@ -12,15 +12,15 @@
     "email": "tombenke@gmail.com"
   },
   "bugs": {
-    "url": "https://github.com/tombenke/walipini_model/issues"
+    "url": "https://github.com/tombenke/walipini-viewer/issues"
   },
   "license": {
     "type": "MIT",
-    "url": "https://github.com/tombenke/walipini_model/blob/master/LICENSE"
+    "url": "https://github.com/tombenke/walipini-viewer/blob/master/LICENSE"
   },
   "repository": {
     "type": "git",
-    "url": "http://github.com/tombenke/walipini_model.git"
+    "url": "http://github.com/tombenke/walipini-viewer.git"
   },
   "bin": {},
   "main": "index.js",
@@ -29,7 +29,7 @@
   },
   "dependencies": {
     "domready": "^1.0.8",
-    "three": "^0.86.0",
+    "three": "^0.87.1",
     "three-js-csg": "^72.0.0",
     "three-orbit-controls": "^82.1.0"
   },
