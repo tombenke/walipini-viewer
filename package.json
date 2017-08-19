@@ -1,11 +1,14 @@
 {
   "name": "walipini-viewer",
   "description": "3D model skectch for walipini simulator",
-  "version": "2.0.0",
+  "version": "1.0.0",
   "keywords": [
     "web",
     "ui",
-    "react"
+    "threejs",
+    "3D",
+    "model",
+    "walipini"
   ],
   "author": {
     "name": "Tamás Benke",
