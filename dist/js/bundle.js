@@ -123,11 +123,11 @@ const kps = (options) => {
 
     // Front Wall
     const FWLBI = new THREE.Vector2(walipini.width / 2, 0)
-    const FWLBE = new THREE.Vector2(walipini.width / 2 + walipini.wall.thickness)
-    const FWLTE = new THREE.Vector2(FWLBE.x/*walipini.width / 2 + walipini.wall.thickness*/, walipini.wall.frontHeight)
-    const FWLTI = new THREE.Vector2(FWLBI.x /*walipini.width / 2*/, Math.max(0, walipini.wall.frontHeight - walipini.wall.thickness * Math.tan(toRad(options.winterSolsticeElevation))))
-    const FWLTM = new THREE.Vector2(FWLTE.x - Math.cos(options.winterSolsticeElevation) * walipini.roof.beam.height,
-         Math.max(walipini.wall.frontHeight - Math.sin(options.winterSolsticeElevation) * walipini.roof.beam.height, 0))
+    const FWLBE = new THREE.Vector2(walipini.width / 2 + walipini.wall.thickness, 0)
+    const FWLTE = new THREE.Vector2(FWLBE.x, walipini.wall.frontHeight)
+    const FWLTI = new THREE.Vector2(FWLBI.x, Math.max(0, walipini.wall.frontHeight - walipini.wall.thickness * Math.tan(toRad(options.winterSolsticeElevation))))
+    const FWLTM = new THREE.Vector2(FWLTE.x - Math.cos(toRad(options.winterSolsticeElevation)) * walipini.roof.beam.height,
+         Math.max(walipini.wall.frontHeight - Math.sin(toRad(options.winterSolsticeElevation)) * walipini.roof.beam.height, 0))
     
     // Back Wall
     const BWLBE = new THREE.Vector2(-(walipini.width / 2 + walipini.wall.thickness), 0)
@@ -272,7 +272,7 @@ const create = (options) => {
     const kps = options.walipini.kps
 
     const length = options.walipini.length + options.walipini.wall.thickness * 2
-    const fwlVertices = [kps.FWLBI, kps.FWLTI, kps.FWLTM, kps.FWLTE, kps.FWLTE, kps.FWLBE, kps.FWLBI]
+    const fwlVertices = [kps.FWLBI, kps.FWLTI, kps.FWLTM, kps.FWLTE, kps.FWLBE, kps.FWLBI]
     const bwlVertices = [kps.BWLBE, kps.BWLTE, kps.BWLTI, kps.BWLBI, kps.BWLBE]
 
     const frontWall = createWall(fwlVertices, length)
