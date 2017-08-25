@@ -57,12 +57,13 @@ module.exports = {
     create: create
 }
 
-},{"three":7,"three-js-csg":6}],2:[function(require,module,exports){
+},{"three":8,"three-js-csg":7}],2:[function(require,module,exports){
 const THREE = require('three')
 const ground = require('./ground')
 const walls = require('./walls')
 const roof = require('./roof')
 const parameters = require('./parameters')
+const reports = require('./reports')
 
 const create = (rawOptions) => {
     const options = parameters.update(rawOptions)
@@ -75,11 +76,17 @@ const create = (rawOptions) => {
     return walipini
 }
 
-module.exports = {
-    create: create
+const makeReports = (rawOptions) => {
+    const options = parameters.update(rawOptions)
+    return reports.make(options)
 }
 
-},{"./ground":1,"./parameters":3,"./roof":4,"./walls":5,"three":7}],3:[function(require,module,exports){
+module.exports = {
+    create: create,
+    reports: makeReports
+}
+
+},{"./ground":1,"./parameters":3,"./reports":4,"./roof":5,"./walls":6,"three":8}],3:[function(require,module,exports){
 const THREE = require('three')
 const toRad = THREE.Math.degToRad
 
@@ -126,9 +133,9 @@ const kps = (options) => {
 
     // Roof Top
     const RTH = new THREE.Vector2(walipini.width / 2 + walipini.wall.thickness - walipini.roof.topDistance * Math.tan(toRad(wsElevation)),
-       walipini.wall.frontHeight + walipini.roof.topDistance)
+        walipini.wall.frontHeight + walipini.roof.topDistance)
     const RTL = new THREE.Vector2(RTH.x + walipini.roof.beam.height * Math.sin(toRad(wsElevation)),
-       RTH.y - walipini.roof.beam.height * Math.cos(toRad(wsElevation)))
+        RTH.y - walipini.roof.beam.height * Math.cos(toRad(wsElevation)))
 
     // Front Wall
     const FWLBI = new THREE.Vector2(walipini.width / 2, 0)
@@ -136,7 +143,7 @@ const kps = (options) => {
     const FWLTE = new THREE.Vector2(FWLBE.x, walipini.wall.frontHeight)
     const FWLTI = new THREE.Vector2(FWLBI.x, Math.max(0, walipini.wall.frontHeight - walipini.wall.thickness * Math.tan(toRad(wsElevation))))
     const FWLTM = new THREE.Vector2(FWLTE.x - Math.cos(toRad(wsElevation)) * walipini.roof.beam.height,
-         Math.max(walipini.wall.frontHeight - Math.sin(toRad(wsElevation)) * walipini.roof.beam.height, 0))
+        Math.max(walipini.wall.frontHeight - Math.sin(toRad(wsElevation)) * walipini.roof.beam.height, 0))
     
     // Back Wall
     const BWLBE = new THREE.Vector2(-(walipini.width / 2 + walipini.wall.thickness), 0)
@@ -221,7 +228,45 @@ module.exports = {
     update: update
 }
 
-},{"three":7}],4:[function(require,module,exports){
+},{"three":8}],4:[function(require,module,exports){
+const THREE = require('three')
+const toRad = THREE.Math.degToRad
+
+const make = (options) => ({
+    volumes: {
+        dig: {
+            soil: 0,
+            underSoil: 0,
+            staircase: 0,
+            totals: 0
+        },
+        walls: {
+            front: 0,
+            back: 0,
+            sides: 0,
+            totals: 0
+        },
+        totals: 0
+    },
+    surfaces: {
+        roof: {
+            frontWindow: 0,
+            backWindow: 0,
+            totals: 0
+        },
+        building: {
+            internal: 0,
+            walls: 0,
+            totals: 0
+       }
+    }
+})
+
+module.exports = {
+    make: make
+}
+
+},{"three":8}],5:[function(require,module,exports){
 const THREE = require('three')
 
 const create = (options) => {
@@ -261,7 +306,7 @@ module.exports = {
     create: create
 }
 
-},{"three":7}],5:[function(require,module,exports){
+},{"three":8}],6:[function(require,module,exports){
 const THREE = require('three')
 
 const extrude = (vertices, height) => {
@@ -396,7 +441,7 @@ const createBoxBSP = (x, y, z, width, height, length) => {
 */
 
 
-},{"three":7}],6:[function(require,module,exports){
+},{"three":8}],7:[function(require,module,exports){
 'use strict';
 	
 	var ThreeBSP,
@@ -949,7 +994,7 @@ const createBoxBSP = (x, y, z, width, height, length) => {
     
     return ThreeBSP;
   }
-},{}],7:[function(require,module,exports){
+},{}],8:[function(require,module,exports){
 (function (global, factory) {
 	typeof exports === 'object' && typeof module !== 'undefined' ? factory(exports) :
 	typeof define === 'function' && define.amd ? define(['exports'], factory) :
@@ -45190,7 +45235,7 @@ const createBoxBSP = (x, y, z, width, height, length) => {
 
 })));
 
-},{}],8:[function(require,module,exports){
+},{}],9:[function(require,module,exports){
 const domready = require('domready')
 
 domready(() => {
@@ -45198,7 +45243,7 @@ domready(() => {
     require('./threejs').main()
 });
 
-},{"./threejs":9,"domready":11}],9:[function(require,module,exports){
+},{"./threejs":10,"domready":12}],10:[function(require,module,exports){
 var THREE = require('three')
 var OrbitControls = require('three-orbit-controls')(THREE)
 const world = require('./world')
@@ -45281,7 +45326,7 @@ module.exports = {
     main: main
 }
 
-},{"./world":10,"three":14,"three-orbit-controls":13}],10:[function(require,module,exports){
+},{"./world":11,"three":15,"three-orbit-controls":14}],11:[function(require,module,exports){
 const THREE = require('three')
 const ThreeBSP = require('three-js-csg')(THREE)
 const walipini = require('walipini-model-3d')
@@ -45389,13 +45434,16 @@ const create = function(scene) {
 
     addLights(scene)
     scene.add(walipini.create(walipiniOptions))
+
+    // Print reports
+    console.log(walipini.reports(walipiniOptions))
 }
 
 module.exports = {
     create: create
 }
 
-},{"three":14,"three-js-csg":12,"walipini-model-3d":2}],11:[function(require,module,exports){
+},{"three":15,"three-js-csg":13,"walipini-model-3d":2}],12:[function(require,module,exports){
 /*!
   * domready (c) Dustin Diaz 2014 - License MIT
   */
@@ -45427,9 +45475,9 @@ module.exports = {
 
 });
 
-},{}],12:[function(require,module,exports){
-arguments[4][6][0].apply(exports,arguments)
-},{"dup":6}],13:[function(require,module,exports){
+},{}],13:[function(require,module,exports){
+arguments[4][7][0].apply(exports,arguments)
+},{"dup":7}],14:[function(require,module,exports){
 module.exports = function( THREE ) {
 	/**
 	 * @author qiao / https://github.com/qiao
@@ -46451,6 +46499,6 @@ module.exports = function( THREE ) {
 	return OrbitControls;
 };
 
-},{}],14:[function(require,module,exports){
-arguments[4][7][0].apply(exports,arguments)
-},{"dup":7}]},{},[8]);
+},{}],15:[function(require,module,exports){
+arguments[4][8][0].apply(exports,arguments)
+},{"dup":8}]},{},[9]);
