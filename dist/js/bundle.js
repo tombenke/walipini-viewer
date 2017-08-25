@@ -1,5 +1,115 @@
 (function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return a(o,!0);if(i)return i(o,!0);var f=new Error("Cannot find module '"+o+"'");throw f.code="MODULE_NOT_FOUND",f}var l=n[o]={exports:{}};t[o][0].call(l.exports,function(e){var n=t[o][1][e];return s(n?n:e)},l,l.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s})({1:[function(require,module,exports){
 const THREE = require('three')
+
+const calculateVolume = (object) => {
+    let volumes = 0.0
+
+    for(var i = 0; i < object.faces.length; i++) {
+        let Pi = object.faces[i].a
+        let Qi = object.faces[i].b
+        let Ri = object.faces[i].c
+
+        let P = new THREE.Vector3(object.vertices[Pi].x, object.vertices[Pi].y, object.vertices[Pi].z)
+        let Q = new THREE.Vector3(object.vertices[Qi].x, object.vertices[Qi].y, object.vertices[Qi].z)
+        let R = new THREE.Vector3(object.vertices[Ri].x, object.vertices[Ri].y, object.vertices[Ri].z)
+        volumes += volumeOfT(P, Q, R)
+    }
+
+    return Math.abs(volumes)
+}
+
+const volumeOfT = (p1, p2, p3) => {
+    var v321 = p3.x * p2.y * p1.z;
+    var v231 = p2.x * p3.y * p1.z;
+    var v312 = p3.x * p1.y * p2.z;
+    var v132 = p1.x * p3.y * p2.z;
+    var v213 = p2.x * p1.y * p3.z;
+    var v123 = p1.x * p2.y * p3.z;
+    return (-v321 + v231 + v312 - v132 - v213 + v123) / 6.0;
+}
+
+module.exports = {
+    volume: calculateVolume
+}
+
+/*
+function customRound(number, fractiondigits) {
+    with(Math) {
+        return round(number * pow(10, fractiondigits)) / pow(10, fractiondigits);
+    }
+}
+
+function SuperficialAreaOfMesh(points) {
+
+    var _len = points.length,
+        _area = 0.0;
+
+    if (!_len) return 0.0;
+
+    let i = 0
+    let vols = 0
+    let va
+    let vb
+    let vc
+
+    do  {
+        va = {
+            X: points[i],
+            Y: points[i + 1],
+            Z: points[i + 2]
+        }
+
+        vb = {
+            X: points[i + 3],
+            Y: points[i + 4],
+            Z: points[i + 5]
+        }
+
+        vc = {
+            X: points[i + 6],
+            Y: points[i + 7],
+            Z: points[i + 8]
+        }
+
+        var ab = {
+            X: vb.X - va.X,
+            Y: vb.Y - va.Y,
+            Z: vb.Z - va.Z
+        }
+        //vb.clone().sub(va);  var ac = {X:vc.X-va.X,Y:vc.Y-va.Y,Z:va.Z-vc.Z};
+        //vc.clone().sub(va);   var cross = new THREE.Vector3();
+
+        cross = crossVectors(ab, ac)
+        _area += Math.sqrt(Math.pow(cross.X, 2) + Math.pow(cross.Y, 2) + Math.pow(cross.Z, 2)) / 2
+        i += 9
+    }
+    while (i < points.length)
+
+    return customRound(Math.abs(_area) / 100, 2)
+}
+
+function crossVectors( a, b ) {
+    var ax = a.X
+    var ay = a.Y
+    var az = a.Z
+    var bx = b.X
+    var by = b.Y
+    var bz = b.Z
+    var P = {
+        X: ay * bz - az * by,
+        Y: az * bx - ax * bz,
+        Z: ax * by - ay * bx
+    }
+
+   return P;
+}
+
+*/
+
+
+
+},{"three":9}],2:[function(require,module,exports){
+const THREE = require('three')
 const ThreeBSP = require('three-js-csg')(THREE)
 
 const create = function(options) {
@@ -57,7 +167,7 @@ module.exports = {
     create: create
 }
 
-},{"three":8,"three-js-csg":7}],2:[function(require,module,exports){
+},{"three":9,"three-js-csg":8}],3:[function(require,module,exports){
 const THREE = require('three')
 const ground = require('./ground')
 const walls = require('./walls')
@@ -86,7 +196,7 @@ module.exports = {
     reports: makeReports
 }
 
-},{"./ground":1,"./parameters":3,"./reports":4,"./roof":5,"./walls":6,"three":8}],3:[function(require,module,exports){
+},{"./ground":2,"./parameters":4,"./reports":5,"./roof":6,"./walls":7,"three":9}],4:[function(require,module,exports){
 const THREE = require('three')
 const toRad = THREE.Math.degToRad
 
@@ -228,45 +338,105 @@ module.exports = {
     update: update
 }
 
-},{"three":8}],4:[function(require,module,exports){
-const THREE = require('three')
-const toRad = THREE.Math.degToRad
+},{"three":9}],5:[function(require,module,exports){
+const geometry = require('./geometry')
+const walls = require('./walls')
 
 const make = (options) => ({
-    volumes: {
-        dig: {
-            soil: 0,
-            underSoil: 0,
-            staircase: 0,
-            totals: 0
-        },
-        walls: {
-            front: 0,
-            back: 0,
-            sides: 0,
-            totals: 0
-        },
-        totals: 0
-    },
-    surfaces: {
+    volumes: volumes(options),
+    surfaces: surfaces(options)
+
+})
+
+const volumes = (options) => {
+    const dig = digVolumes(options)
+    const walls = wallsVolumes(options)
+    return {
+        dig: dig,
+        walls: walls,
+        totals: dig.totals + walls.totals
+    }
+}
+
+const soilVolume = (options) => {
+    const soilThickness = options.ground.soil.thickness
+    const totalDepth = options.walipini.dig.depth
+    let digToSoil = soilThickness
+
+    if (totalDepth < soilThickness) {
+        digToSoil = soilThickness - totalDepth
+    }
+
+    return walipiniArea(options) * digToSoil
+}
+
+const underSoilVolume = (options) => {
+    const soilThickness = options.ground.soil.thickness
+    const underSoilThickness = options.ground.underSoil.thickness
+    const totalDepth = options.walipini.dig.depth
+    const digToUnderSoil = Math.max(totalDepth - soilThickness, 0)
+
+    return walipiniArea(options) * digToUnderSoil
+}
+
+const staircaseVolume = (options) => options.walipini.door.width * Math.pow(options.walipini.dig.depth, 2)
+const walipiniArea = (options) => options.walipini.width * options.walipini.length
+
+const digVolumes = (options) => {
+    const soil = soilVolume(options)
+    const underSoil = underSoilVolume(options)
+    const staircase = staircaseVolume(options)
+    return {
+        soil: soil,
+        underSoil: underSoil,
+        staircase: staircase,
+        totals: soil + underSoil + staircase
+    }
+}
+
+const wallsVolumes = (options) => {
+    const front = geometry.volume(walls.createFrontWallGeometry(options))
+    const back = geometry.volume(walls.createBackWallGeometry(options))
+    const sides = geometry.volume(walls.createSideWallGeometry(options)) * 2
+    return {
+        front: front,
+        back: back,
+        sides: sides,
+        totals: front + back + sides
+    }
+}
+
+const surfaces = (options) => {
+    const walipini = options.walipini
+    const wallThickness = walipini.wall.thickness
+    const frontWindow = options.walipini.roof.frontWindow
+    const backWindow = options.walipini.roof.backWindow
+    const frontWindowSurface = frontWindow.width * frontWindow.length
+    const backWindowSurface = backWindow.width * backWindow.length
+    const sideWallsArea = (walipini.width + 2 * wallThickness) * wallThickness * 2
+    const mainWallsArea = walipini.length * wallThickness * 2
+    const walls = sideWallsArea + mainWallsArea
+
+    console.log(frontWindow, backWindow)
+    return {
         roof: {
-            frontWindow: 0,
-            backWindow: 0,
-            totals: 0
+            frontWindow: frontWindowSurface,
+            backWindow: backWindowSurface,
+            totals: frontWindowSurface + backWindowSurface
         },
         building: {
-            internal: 0,
-            walls: 0,
-            totals: 0
-       }
+            internal: walipiniArea(options),
+            walls: walls,
+            totals: walipiniArea(options) + walls
+        }
     }
-})
+}
 
 module.exports = {
     make: make
 }
 
-},{"three":8}],5:[function(require,module,exports){
+},{"./geometry":1,"./walls":7}],6:[function(require,module,exports){
 const THREE = require('three')
 
 const create = (options) => {
@@ -306,7 +476,7 @@ module.exports = {
     create: create
 }
 
-},{"three":8}],6:[function(require,module,exports){
+},{"three":9}],7:[function(require,module,exports){
 const THREE = require('three')
 
 const extrude = (vertices, height) => {
@@ -326,8 +496,7 @@ const extrude = (vertices, height) => {
     return new THREE.ExtrudeGeometry(shape, settings)
 }
 
-const createWall = (vertices, length, tx, ty, tz) => {
-    var geometry = extrude(vertices, length)
+const createWall = (geometry, tx, ty, tz) => {
     geometry.translate(tx, ty, tz)
     // geometry.rotateY(toRad(options.walipini.orientation))
 
@@ -344,23 +513,17 @@ const createWall = (vertices, length, tx, ty, tz) => {
 
 const create = (options) => {
 
-    const result = new THREE.Object3D()
-    const kps = options.walipini.kps
-
     const wallThickness = options.walipini.wall.thickness
     const length = options.walipini.length + wallThickness * 2
     const sideWallDistLeft = -length / 2
     const sideWallDistRight = length / 2 - wallThickness
 
-    const frontWallVertices = [kps.FWLBI, kps.FWLTI, kps.FWLTM, kps.FWLTE, kps.FWLBE, kps.FWLBI]
-    const backWallVertices = [kps.BWLBE, kps.BWLTE, kps.BWLTI, kps.BWLBI, kps.BWLBE]
-    const sideWallVertices = [kps.BWLBE, kps.BWLTE, kps.SWLRT, kps.FWLTM, kps.FWLTE,
-        kps.FWLBE, kps.SWLBF, kps.SWLDF, kps.SWLDB, kps.SWLBB, kps.BWLBE]
+    const frontWall = createWall(createFrontWallGeometry(options), 0, 0, -length / 2)
+    const backWall = createWall(createBackWallGeometry(options), 0, 0, -length / 2)
+    const sideWallLeft = createWall(createSideWallGeometry(options), 0, 0, sideWallDistLeft)
+    const sideWallRight = createWall(createSideWallGeometry(options), 0, 0, sideWallDistRight)
 
-    const frontWall = createWall(frontWallVertices, length, 0, 0, -length / 2)
-    const backWall = createWall(backWallVertices, length, 0, 0, -length / 2)
-    const sideWallLeft = createWall(sideWallVertices, wallThickness, 0, 0, sideWallDistLeft)
-    const sideWallRight = createWall(sideWallVertices, wallThickness, 0, 0, sideWallDistRight)
+    const result = new THREE.Object3D()
 
     result.add(frontWall)
     result.add(backWall)
@@ -370,78 +533,41 @@ const create = (options) => {
     return result
 }
 
+const createFrontWallGeometry = (options) => {
+    const kps = options.walipini.kps
+    const wallThickness = options.walipini.wall.thickness
+    const vertices = [kps.FWLBI, kps.FWLTI, kps.FWLTM, kps.FWLTE, kps.FWLBE, kps.FWLBI]
+    const length = options.walipini.length + wallThickness * 2
+    return extrude(vertices, length)
+}
+
+const createBackWallGeometry = (options) => {
+    const kps = options.walipini.kps
+    const wallThickness = options.walipini.wall.thickness
+    const vertices = [kps.BWLBE, kps.BWLTE, kps.BWLTI, kps.BWLBI, kps.BWLBE]
+    const length = options.walipini.length + wallThickness * 2
+    return extrude(vertices, length)
+}
+
+const createSideWallGeometry = (options) => {
+    const kps = options.walipini.kps
+    const wallThickness = options.walipini.wall.thickness
+    const vertices = [
+        kps.BWLBE, kps.BWLTE, kps.SWLRT, kps.FWLTM, kps.FWLTE,
+        kps.FWLBE, kps.SWLBF, kps.SWLDF, kps.SWLDB, kps.SWLBB, kps.BWLBE
+    ]
+    const length = options.walipini.length + wallThickness * 2
+    return extrude(vertices, wallThickness)
+}
+
 module.exports = {
-    create: create
+    create: create,
+    createFrontWallGeometry: createFrontWallGeometry,
+    createBackWallGeometry: createBackWallGeometry,
+    createSideWallGeometry: createSideWallGeometry
 }
 
-/*
-const createOld = (options) => {
-    const walipini = options.walipini
-    const wall = options.walipini.wall
-    const maxWallHeight = walipini.height - walipini.dig.depth
-    const frontWallLength = walipini.length + 2 * wall.thickness
-    const sideWallLength = walipini.width + 2 * wall.thickness
-
-    // Create Front Wall
-    var frontWallBSP = createBoxBSP((walipini.width + wall.thickness)/2, wall.frontHeight/2, 0, wall.thickness, wall.frontHeight, frontWallLength)
-
-    // Create Back Wall
-    var backWallBSP = createBoxBSP(-(walipini.width + wall.thickness)/2, maxWallHeight/2, 0, wall.thickness, maxWallHeight, frontWallLength)
-
-    // Create Side Walls
-    var leftWallBSP = createBoxBSP(0, maxWallHeight/2, -(walipini.length + wall.thickness)/2, sideWallLength, maxWallHeight, wall.thickness)
-    var rightWallBSP = createBoxBSP(0, maxWallHeight/2, +(walipini.length + wall.thickness)/2, sideWallLength, maxWallHeight, wall.thickness)
-
-    // Create union of walls
-    var wallsBSP = frontWallBSP.union(backWallBSP)
-    wallsBSP = wallsBSP.union(leftWallBSP)
-    wallsBSP = wallsBSP.union(rightWallBSP)
-
-    // Create cutter to the back wall
-    const cutterWidth = walipini.width * 2
-    const cutterHeight = maxWallHeight
-    const cutterLength = frontWallLength * 2
-
-    var bwCutter = new THREE.Mesh(new THREE.BoxGeometry(cutterLength, cutterHeight, cutterWidth))
-    const bw = walipini.roof.backWindow
-    bwCutter.rotateY(-bw.rotate.y)
-    bwCutter.rotateX(bw.rotate.x)
-    bwCutter.position.set(bw.translate.x, bw.translate.y + cutterHeight / (2*Math.cos(toRad(options.winterSolsticeElevation))), bw.translate.z)
-    var bwCutterBSP = new ThreeBSP(bwCutter)
-
-    var fwCutter = new THREE.Mesh(new THREE.BoxGeometry(cutterLength, cutterHeight, cutterWidth))
-    const fw = walipini.roof.frontWindow
-    fwCutter.rotateY(-fw.rotate.y)
-    fwCutter.rotateX(fw.rotate.x)
-    fwCutter.position.set(fw.translate.x + cutterHeight / (2*Math.cos(toRad(options.winterSolsticeElevation))), fw.translate.y, bw.translate.z)
-    var fwCutterBSP = new ThreeBSP(fwCutter)
-
-    wallsBSP = wallsBSP.subtract(bwCutterBSP)
-    wallsBSP = wallsBSP.subtract(fwCutterBSP)
-
-    var walls = wallsBSP.toMesh()
-    walls.material =  new THREE.MeshLambertMaterial({
-        color: wall.color,
-        transparent: false,
-        opacity: 0.6
-    })
-    walls.castShadow = true
-
-    const result = new THREE.Object3D()
-    result.add(walls)
-
-    return result
-}
-
-const createBoxBSP = (x, y, z, width, height, length) => {
-    var volume = new THREE.Mesh(new THREE.BoxGeometry(width, height, length))
-    volume.position.set(x, y, z)
-    return new ThreeBSP(volume)
-}
-*/
-
-
-},{"three":8}],7:[function(require,module,exports){
+},{"three":9}],8:[function(require,module,exports){
 'use strict';
 	
 	var ThreeBSP,
@@ -994,7 +1120,7 @@ const createBoxBSP = (x, y, z, width, height, length) => {
     
     return ThreeBSP;
   }
-},{}],8:[function(require,module,exports){
+},{}],9:[function(require,module,exports){
 (function (global, factory) {
 	typeof exports === 'object' && typeof module !== 'undefined' ? factory(exports) :
 	typeof define === 'function' && define.amd ? define(['exports'], factory) :
@@ -45235,7 +45361,7 @@ const createBoxBSP = (x, y, z, width, height, length) => {
 
 })));
 
-},{}],9:[function(require,module,exports){
+},{}],10:[function(require,module,exports){
 const domready = require('domready')
 
 domready(() => {
@@ -45243,7 +45369,7 @@ domready(() => {
     require('./threejs').main()
 });
 
-},{"./threejs":10,"domready":12}],10:[function(require,module,exports){
+},{"./threejs":11,"domready":13}],11:[function(require,module,exports){
 var THREE = require('three')
 var OrbitControls = require('three-orbit-controls')(THREE)
 const world = require('./world')
@@ -45326,7 +45452,7 @@ module.exports = {
     main: main
 }
 
-},{"./world":11,"three":15,"three-orbit-controls":14}],11:[function(require,module,exports){
+},{"./world":12,"three":16,"three-orbit-controls":15}],12:[function(require,module,exports){
 const THREE = require('three')
 const ThreeBSP = require('three-js-csg')(THREE)
 const walipini = require('walipini-model-3d')
@@ -45423,7 +45549,7 @@ const create = function(scene) {
                     height: 0.1
                 },
                 frontWindow: { color: 'gray' },
-                topWindow: { color: 'gray' }
+                backWindow: { color: 'gray' }
             },
             door: {
                 width: 0.8,
@@ -45443,7 +45569,7 @@ module.exports = {
     create: create
 }
 
-},{"three":15,"three-js-csg":13,"walipini-model-3d":2}],12:[function(require,module,exports){
+},{"three":16,"three-js-csg":14,"walipini-model-3d":3}],13:[function(require,module,exports){
 /*!
   * domready (c) Dustin Diaz 2014 - License MIT
   */
@@ -45475,9 +45601,9 @@ module.exports = {
 
 });
 
-},{}],13:[function(require,module,exports){
-arguments[4][7][0].apply(exports,arguments)
-},{"dup":7}],14:[function(require,module,exports){
+},{}],14:[function(require,module,exports){
+arguments[4][8][0].apply(exports,arguments)
+},{"dup":8}],15:[function(require,module,exports){
 module.exports = function( THREE ) {
 	/**
 	 * @author qiao / https://github.com/qiao
@@ -46499,6 +46625,6 @@ module.exports = function( THREE ) {
 	return OrbitControls;
 };
 
-},{}],15:[function(require,module,exports){
-arguments[4][8][0].apply(exports,arguments)
-},{"dup":8}]},{},[9]);
+},{}],16:[function(require,module,exports){
+arguments[4][9][0].apply(exports,arguments)
+},{"dup":9}]},{},[10]);
