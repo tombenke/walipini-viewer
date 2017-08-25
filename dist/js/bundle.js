@@ -84,11 +84,13 @@ const THREE = require('three')
 const toRad = THREE.Math.degToRad
 
 const update = (options) => {
-    var walipini = options.walipini
+    const walipini = options.walipini
+    const wsElevation = options.winterSolsticeElevation
+
     walipini.roof.topHeight = walipini.wall.frontHeight + walipini.roof.topDistance
     walipini.height = walipini.dig.depth + walipini.roof.topHeight
-    walipini.roof.frontWindow = frontWindow(walipini, options.winterSolsticeElevation)
-    walipini.roof.backWindow = backWindow(walipini, options.winterSolsticeElevation)
+    walipini.roof.frontWindow = frontWindow(walipini, wsElevation)
+    walipini.roof.backWindow = backWindow(walipini, wsElevation)
     walipini.kps = kps(options)
     console.log(options)
     return options
@@ -120,14 +122,21 @@ const frontWindow = (walipini, wsElevation) => {
 
 const kps = (options) => {
     const walipini = options.walipini
+    const wsElevation = options.winterSolsticeElevation
+
+    // Roof Top
+    const RTH = new THREE.Vector2(walipini.width / 2 + walipini.wall.thickness - walipini.roof.topDistance * Math.tan(toRad(wsElevation)),
+       walipini.wall.frontHeight + walipini.roof.topDistance)
+    const RTL = new THREE.Vector2(RTH.x + walipini.roof.beam.height * Math.sin(toRad(wsElevation)),
+       RTH.y - walipini.roof.beam.height * Math.cos(toRad(wsElevation)))
 
     // Front Wall
     const FWLBI = new THREE.Vector2(walipini.width / 2, 0)
     const FWLBE = new THREE.Vector2(walipini.width / 2 + walipini.wall.thickness, 0)
     const FWLTE = new THREE.Vector2(FWLBE.x, walipini.wall.frontHeight)
-    const FWLTI = new THREE.Vector2(FWLBI.x, Math.max(0, walipini.wall.frontHeight - walipini.wall.thickness * Math.tan(toRad(options.winterSolsticeElevation))))
-    const FWLTM = new THREE.Vector2(FWLTE.x - Math.cos(toRad(options.winterSolsticeElevation)) * walipini.roof.beam.height,
-         Math.max(walipini.wall.frontHeight - Math.sin(toRad(options.winterSolsticeElevation)) * walipini.roof.beam.height, 0))
+    const FWLTI = new THREE.Vector2(FWLBI.x, Math.max(0, walipini.wall.frontHeight - walipini.wall.thickness * Math.tan(toRad(wsElevation))))
+    const FWLTM = new THREE.Vector2(FWLTE.x - Math.cos(toRad(wsElevation)) * walipini.roof.beam.height,
+         Math.max(walipini.wall.frontHeight - Math.sin(toRad(wsElevation)) * walipini.roof.beam.height, 0))
     
     // Back Wall
     const BWLBE = new THREE.Vector2(-(walipini.width / 2 + walipini.wall.thickness), 0)
@@ -135,7 +144,21 @@ const kps = (options) => {
     const BWLTI = new THREE.Vector2(-walipini.width / 2, walipini.wall.backHeight)
     const BWLBI = new THREE.Vector2(BWLTI.x, 0)
 
+    // Side Wall
+    const SWLBB = new THREE.Vector2(-walipini.door.width / 2, 0)
+    const SWLBF = new THREE.Vector2(walipini.door.width / 2, 0)
+    const SWLDB = new THREE.Vector2(SWLBB.x, walipini.door.height - walipini.dig.depth)
+    const SWLDF = new THREE.Vector2(SWLBF.x, walipini.door.height - walipini.dig.depth)
+    const SWLRT = new THREE.Vector2(RTL.x, RTL.y) // TODO
+
+    // Pit bottom
+    const WPBB = new THREE.Vector2(-walipini.width / 2, - walipini.dig.depth)
+    const WPBF = new THREE.Vector2(walipini.width / 2, - walipini.dig.depth)
+
     return {
+        RTH: RTH,
+        RTL: RTL,
+
         // Front Wall
         FWLBI: FWLBI,
         FWLBE: FWLBE,
@@ -147,7 +170,18 @@ const kps = (options) => {
         BWLBE: BWLBE,
         BWLTE: BWLTE,
         BWLTI: BWLTI,
-        BWLBI: BWLBI
+        BWLBI: BWLBI,
+
+        // Side Wall
+        SWLBB: SWLBB,
+        SWLBF: SWLBF,
+        SWLDB: SWLDB,
+        SWLDF: SWLDF,
+        SWLRT: SWLRT,
+
+        // Pit bottom
+        WPBB: WPBB,
+        WPBF: WPBF
     }
 }
 
@@ -229,9 +263,6 @@ module.exports = {
 
 },{"three":7}],5:[function(require,module,exports){
 const THREE = require('three')
-const ThreeBSP = require('three-js-csg')(THREE)
-
-const toRad = THREE.Math.degToRad
 
 const extrude = (vertices, height) => {
 
@@ -250,10 +281,10 @@ const extrude = (vertices, height) => {
     return new THREE.ExtrudeGeometry(shape, settings)
 }
 
-const createWall = (vertices, length) => {
-    var geometry = extrude(vertices, length); 
-    geometry.translate(0, 0, -length/2)
-//    geometry.rotateY(toRad(options.walipini.orientation))
+const createWall = (vertices, length, tx, ty, tz) => {
+    var geometry = extrude(vertices, length)
+    geometry.translate(tx, ty, tz)
+    // geometry.rotateY(toRad(options.walipini.orientation))
 
     var wall = new THREE.Mesh(geometry)
 
@@ -271,14 +302,25 @@ const create = (options) => {
     const result = new THREE.Object3D()
     const kps = options.walipini.kps
 
-    const length = options.walipini.length + options.walipini.wall.thickness * 2
-    const fwlVertices = [kps.FWLBI, kps.FWLTI, kps.FWLTM, kps.FWLTE, kps.FWLBE, kps.FWLBI]
-    const bwlVertices = [kps.BWLBE, kps.BWLTE, kps.BWLTI, kps.BWLBI, kps.BWLBE]
+    const wallThickness = options.walipini.wall.thickness
+    const length = options.walipini.length + wallThickness * 2
+    const sideWallDistLeft = -length / 2
+    const sideWallDistRight = length / 2 - wallThickness
 
-    const frontWall = createWall(fwlVertices, length)
-    const backWall = createWall(bwlVertices, length)
+    const frontWallVertices = [kps.FWLBI, kps.FWLTI, kps.FWLTM, kps.FWLTE, kps.FWLBE, kps.FWLBI]
+    const backWallVertices = [kps.BWLBE, kps.BWLTE, kps.BWLTI, kps.BWLBI, kps.BWLBE]
+    const sideWallVertices = [kps.BWLBE, kps.BWLTE, kps.SWLRT, kps.FWLTM, kps.FWLTE,
+        kps.FWLBE, kps.SWLBF, kps.SWLDF, kps.SWLDB, kps.SWLBB, kps.BWLBE]
+
+    const frontWall = createWall(frontWallVertices, length, 0, 0, -length / 2)
+    const backWall = createWall(backWallVertices, length, 0, 0, -length / 2)
+    const sideWallLeft = createWall(sideWallVertices, wallThickness, 0, 0, sideWallDistLeft)
+    const sideWallRight = createWall(sideWallVertices, wallThickness, 0, 0, sideWallDistRight)
+
     result.add(frontWall)
     result.add(backWall)
+    result.add(sideWallLeft)
+    result.add(sideWallRight)
 
     return result
 }
@@ -354,7 +396,7 @@ const createBoxBSP = (x, y, z, width, height, length) => {
 */
 
 
-},{"three":7,"three-js-csg":6}],6:[function(require,module,exports){
+},{"three":7}],6:[function(require,module,exports){
 'use strict';
 	
 	var ThreeBSP,
@@ -45337,6 +45379,10 @@ const create = function(scene) {
                 },
                 frontWindow: { color: 'gray' },
                 topWindow: { color: 'gray' }
+            },
+            door: {
+                width: 0.8,
+                height: 1.8,
             }
         }
     }
