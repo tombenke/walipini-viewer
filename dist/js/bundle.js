@@ -217,11 +217,16 @@ const update = (options) => {
 const frontWindow = (walipini, wsElevation) => {
     const fwh = frontWindowHeight(walipini, wsElevation)
     const fwp = frontWindowProjection(walipini, wsElevation)
+    const frontWindow = walipini.roof.frontWindow
 
     return {
         width: walipini.length + walipini.wall.thickness * 2,
         height: walipini.roof.beam.height,
         length: fwh,
+        color: frontWindow.color,
+        transparent: frontWindow.transparent,
+        opacity: frontWindow.opacity,
+        castShadow: frontWindow.castShadow,
 
         translate: {
             x: walipini.width / 2 + walipini.wall.thickness - fwp / 2,
@@ -234,6 +239,35 @@ const frontWindow = (walipini, wsElevation) => {
             y: toRad(90),
             z: 0
 
+        }
+    }
+}
+
+const backWindow = (walipini, wsElevation) => {
+    const fwp = frontWindowProjection(walipini, wsElevation)
+    const bwp = walipini.width + walipini.wall.thickness * 2 - fwp
+    const bwh = bwp / Math.cos(toRad(wsElevation))
+    const backWindow = walipini.roof.backWindow
+
+    return {
+        width: walipini.length + walipini.wall.thickness * 2,
+        height: walipini.roof.beam.height,
+        length: bwh,
+        color: backWindow.color,
+        transparent: backWindow.transparent,
+        opacity: backWindow.opacity,
+        castShadow: backWindow.castShadow,
+
+        translate: {
+            x: -(walipini.width / 2 + walipini.wall.thickness) + bwp / 2,
+            y: roofHeight(walipini) - (bwh * Math.sin(toRad(wsElevation)) /2),
+            z: 0
+        },
+
+        rotate: {
+            x: toRad(wsElevation),
+            y: toRad(90),
+            z: 0
         }
     }
 }
@@ -300,30 +334,6 @@ const kps = (options) => {
         // Pit bottom
         WPBB: WPBB,
         WPBF: WPBF
-    }
-}
-
-const backWindow = (walipini, wsElevation) => {
-    const fwp = frontWindowProjection(walipini, wsElevation)
-    const bwp = walipini.width + walipini.wall.thickness * 2 - fwp
-    const bwh = bwp / Math.cos(toRad(wsElevation))
-
-    return {
-        width: walipini.length + walipini.wall.thickness * 2,
-        height: walipini.roof.beam.height,
-        length: bwh,
-
-        translate: {
-            x: -(walipini.width / 2 + walipini.wall.thickness) + bwp / 2,
-            y: roofHeight(walipini) - (bwh * Math.sin(toRad(wsElevation)) /2),
-            z: 0
-        },
-
-        rotate: {
-            x: toRad(wsElevation),
-            y: toRad(90),
-            z: 0
-        }
     }
 }
 
@@ -463,10 +473,10 @@ const createFrontWindow = (roof) => {
     frontWindow.position.set(roof.frontWindow.translate.x-roof.frontWindow.height/2, roof.frontWindow.translate.y, roof.frontWindow.translate.z)
     frontWindow.material = new THREE.MeshLambertMaterial({
         color: roof.frontWindow.color,
-        transparent: true,
-        opacity: 0.6
+        transparent: roof.frontWindow.transparent,
+        opacity: roof.frontWindow.opacity
     })
-    frontWindow.castShadow = false
+    frontWindow.castShadow = roof.frontWindow.castShadow
 
     return frontWindow
 }
@@ -480,11 +490,11 @@ const createBackWindow = (roof) => {
     backWindow.rotateX(roof.backWindow.rotate.x)
     backWindow.position.set(roof.backWindow.translate.x, roof.backWindow.translate.y, roof.backWindow.translate.z)
     backWindow.material = new THREE.MeshLambertMaterial({
-        color: roof.frontWindow.color,
-        transparent: true,
-        opacity: 0.6
+        color: roof.backWindow.color,
+        transparent: roof.backWindow.transparent,
+        opacity: roof.backWindow.opacity
     })
-    backWindow.castShadow = false
+    backWindow.castShadow = roof.backWindow.castShadow
 
     return backWindow
 }
@@ -45623,8 +45633,18 @@ const create = function(scene) {
                     width: 0.05,
                     height: 0.1
                 },
-                frontWindow: { color: 'gray' },
-                backWindow: { color: 'gray' }
+                frontWindow: {
+                    color: 'white',
+                    transparent: true,
+                    opacity: 0.4,
+                    castShadow: false
+                },
+                backWindow: {
+                    color: 'brown',
+                    transparent: false,
+                    opacity: 0.4,
+                    castShadow: true
+                }
             },
             door: {
                 width: 0.8,
