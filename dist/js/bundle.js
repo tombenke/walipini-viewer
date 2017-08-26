@@ -208,6 +208,7 @@ const update = (options) => {
     walipini.height = walipini.dig.depth + walipini.roof.topHeight
     walipini.roof.frontWindow = frontWindow(walipini, wsElevation)
     walipini.roof.backWindow = backWindow(walipini, wsElevation)
+    walipini.roof.beam.numBeams = numBeams(walipini)
     walipini.kps = kps(options)
     console.log(options)
     return options
@@ -334,6 +335,9 @@ const frontWindowHeight = (walipini, wsElevation) =>
 
 const roofHeight = (walipini) => walipini.height - walipini.dig.depth
 
+const numBeams = (walipini) =>
+    Math.ceil((walipini.length + walipini.wall.thickness * 2) / walipini.roof.beam.maxDistance + 1)
+
 module.exports = {
     update: update
 }
@@ -372,7 +376,6 @@ const soilVolume = (options) => {
 
 const underSoilVolume = (options) => {
     const soilThickness = options.ground.soil.thickness
-    const underSoilThickness = options.ground.underSoil.thickness
     const totalDepth = options.walipini.dig.depth
     const digToUnderSoil = Math.max(totalDepth - soilThickness, 0)
 
@@ -443,33 +446,102 @@ const create = (options) => {
     const roof = options.walipini.roof
     const result = new THREE.Object3D()
 
-    // Create the front window    
+    result.add(createFrontWindow(roof))
+    result.add(createBackWindow(roof))
+    result.add(createBeams(roof))
+
+    return result
+}
+
+/**
+  * Create the front window    
+  */
+const createFrontWindow = (roof) => {
     const frontWindow = new THREE.Mesh(new THREE.BoxGeometry(roof.frontWindow.width, roof.frontWindow.height, roof.frontWindow.length))
     frontWindow.rotateY(-roof.frontWindow.rotate.y)
     frontWindow.rotateX(roof.frontWindow.rotate.x)
     frontWindow.position.set(roof.frontWindow.translate.x-roof.frontWindow.height/2, roof.frontWindow.translate.y, roof.frontWindow.translate.z)
     frontWindow.material = new THREE.MeshLambertMaterial({
-        color: 'white' /*roof.frontWindow.color*/,
+        color: roof.frontWindow.color,
         transparent: true,
         opacity: 0.6
     })
-    frontWindow.castShadow = true
-    result.add(frontWindow)
+    frontWindow.castShadow = false
 
-    // Create the back window
+    return frontWindow
+}
+
+/**
+  * Create the back window
+  */
+const createBackWindow = (roof) => {
     const backWindow = new THREE.Mesh(new THREE.BoxGeometry(roof.backWindow.width, roof.backWindow.height, roof.backWindow.length))
     backWindow.rotateY(-roof.backWindow.rotate.y)
     backWindow.rotateX(roof.backWindow.rotate.x)
     backWindow.position.set(roof.backWindow.translate.x, roof.backWindow.translate.y, roof.backWindow.translate.z)
     backWindow.material = new THREE.MeshLambertMaterial({
-        color: 'white' /*roof.frontWindow.color*/,
+        color: roof.frontWindow.color,
         transparent: true,
         opacity: 0.6
     })
-    backWindow.castShadow = true
-    result.add(backWindow)
+    backWindow.castShadow = false
 
-    return result
+    return backWindow
+}
+
+const createBeams = (roof) => {
+    const fullLength = roof.frontWindow.width
+    const beamdistance = fullLength / roof.beam.numBeams
+    const allBeams = new THREE.Object3D()
+    const trans = - fullLength / 2
+    const fullBeam = createFullBeam(roof)
+
+    for(var b = 0; b <= roof.beam.numBeams; b++) {
+        let clone = fullBeam.clone(true)
+        clone.translateZ(trans + b * beamdistance)
+        allBeams.add(clone)
+    }
+
+    return allBeams
+}
+
+const createFullBeam = (roof) => {
+    const fullBeam = new THREE.Object3D()
+
+    fullBeam.add(createFrontBeam(roof))
+    fullBeam.add(createBackBeam(roof))
+
+    return fullBeam
+}
+
+const createFrontBeam = (roof) => {
+    const frontWindow = roof.frontWindow
+    const beamLength = roof.frontWindow.length
+    const frontBeam = new THREE.Mesh(new THREE.BoxGeometry(beamLength, roof.beam.height, roof.beam.width))
+    frontBeam.rotateZ(roof.frontWindow.rotate.x)
+    frontBeam.position.set(frontWindow.translate.x - frontWindow.height/2, frontWindow.translate.y, frontWindow.translate.z)
+    frontBeam.material = new THREE.MeshLambertMaterial({
+        color: 'brown',
+        transparent: false
+    })
+    frontBeam.castShadow = true
+
+    return frontBeam
+}
+
+const createBackBeam = (roof) => {
+    const backWindow = roof.backWindow
+    const beamLength = roof.backWindow.length
+    const backBeam = new THREE.Mesh(new THREE.BoxGeometry(beamLength, roof.beam.height, roof.beam.width))
+    backBeam.rotateZ(roof.backWindow.rotate.x)
+    backBeam.position.set(backWindow.translate.x - backWindow.height/2, backWindow.translate.y, backWindow.translate.z)
+    backBeam.material = new THREE.MeshLambertMaterial({
+        color: 'brown',
+        transparent: false
+    })
+    backBeam.castShadow = true
+
+    return backBeam
 }
 
 module.exports = {
@@ -538,6 +610,7 @@ const createFrontWallGeometry = (options) => {
     const wallThickness = options.walipini.wall.thickness
     const vertices = [kps.FWLBI, kps.FWLTI, kps.FWLTM, kps.FWLTE, kps.FWLBE, kps.FWLBI]
     const length = options.walipini.length + wallThickness * 2
+
     return extrude(vertices, length)
 }
 
@@ -546,6 +619,7 @@ const createBackWallGeometry = (options) => {
     const wallThickness = options.walipini.wall.thickness
     const vertices = [kps.BWLBE, kps.BWLTE, kps.BWLTI, kps.BWLBI, kps.BWLBE]
     const length = options.walipini.length + wallThickness * 2
+
     return extrude(vertices, length)
 }
 
@@ -556,7 +630,7 @@ const createSideWallGeometry = (options) => {
         kps.BWLBE, kps.BWLTE, kps.SWLRT, kps.FWLTM, kps.FWLTE,
         kps.FWLBE, kps.SWLBF, kps.SWLDF, kps.SWLDB, kps.SWLBB, kps.BWLBE
     ]
-    const length = options.walipini.length + wallThickness * 2
+
     return extrude(vertices, wallThickness)
 }
 
@@ -45533,18 +45607,19 @@ const create = function(scene) {
             width: 3,
             length: 10,
             dig: {
-                depth: 1.3
+                depth: 0.3
             },
             orientation: 90,
             wall: {
                 thickness: 0.5,
                 frontHeight: 0.75,
-                backHeight: 0.76,
+                backHeight: 1.76,
                 color: 'gray'
             },
             roof: {
-                topDistance: 1.25,
+                topDistance: 2.25,
                 beam: {
+                    maxDistance: 0.8,
                     width: 0.05,
                     height: 0.1
                 },
