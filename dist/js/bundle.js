@@ -28,8 +28,27 @@ const volumeOfT = (p1, p2, p3) => {
     return (-v321 + v231 + v312 - v132 - v213 + v123) / 6.0;
 }
 
+const extrude = (vertices, height) => {
+
+    var shape = new THREE.Shape()
+
+    shape.moveTo(vertices[0].x, vertices[0].y)
+    for (var i=1; i < vertices.length; i++) {
+        shape.lineTo(vertices[i].x, vertices[i].y)
+    }
+    shape.lineTo(vertices[0].x, vertices[0].y)
+
+    var settings = {
+        amount: height,
+        bevelEnabled: false
+    }
+    return new THREE.ExtrudeGeometry(shape, settings)
+}
+
+
 module.exports = {
-    volume: calculateVolume
+    volume: calculateVolume,
+    extrude: extrude
 }
 
 /*
@@ -206,12 +225,87 @@ const update = (options) => {
 
     walipini.roof.topHeight = walipini.wall.frontHeight + walipini.roof.topDistance
     walipini.height = walipini.dig.depth + walipini.roof.topHeight
+
+    // Calculate reference points
+    walipini.kps = kps(options)
+
+    // Calculate windows
     walipini.roof.frontWindow = frontWindow(walipini, wsElevation)
     walipini.roof.backWindow = backWindow(walipini, wsElevation)
     walipini.roof.beam.numBeams = numBeams(walipini)
-    walipini.kps = kps(options)
     console.log(options)
     return options
+}
+
+const kps = (options) => {
+    const walipini = options.walipini
+    const wsElevation = options.winterSolsticeElevation
+    const walipiniInnerHeight = walipini.wall.frontHeight + walipini.roof.topDistance
+
+    // Front Wall
+    const FWLBI = new THREE.Vector2(walipini.width / 2, 0)
+    const FWLBE = new THREE.Vector2(walipini.width / 2 + walipini.wall.thickness, 0)
+    const FWLTE = new THREE.Vector2(FWLBE.x, walipini.wall.frontHeight)
+    const FWLTI = new THREE.Vector2(FWLBI.x, Math.max(0, walipini.wall.frontHeight - walipini.wall.thickness * Math.tan(toRad(wsElevation))))
+    const FWLTM = new THREE.Vector2(FWLTE.x - Math.cos(toRad(wsElevation)) * walipini.roof.beam.height,
+        Math.max(walipini.wall.frontHeight - Math.sin(toRad(wsElevation)) * walipini.roof.beam.height, 0))
+    
+    // Side Wall
+    const SWLBB = new THREE.Vector2(-walipini.door.width / 2, 0)
+    const SWLBF = new THREE.Vector2(walipini.door.width / 2, 0)
+    const SWLDB = new THREE.Vector2(SWLBB.x, walipini.door.height - walipini.dig.depth)
+    const SWLDF = new THREE.Vector2(SWLBF.x, walipini.door.height - walipini.dig.depth)
+    const SWLRT = new THREE.Vector2(FWLTM.x - (walipiniInnerHeight - FWLTM.y) * Math.tan(toRad(wsElevation)),
+        walipiniInnerHeight)
+
+    // Back Wall
+    const BWLTI = new THREE.Vector2(-walipini.width / 2, walipini.wall.backHeight)
+    const BWLBI = new THREE.Vector2(BWLTI.x, 0)
+    const BWLBE = new THREE.Vector2(-(walipini.width / 2 + walipini.wall.thickness), 0)
+    const backWindowAngleRad = Math.atan((SWLRT.y - BWLTI.y) / (SWLRT.x - BWLTI.x))
+    const BWLTE = new THREE.Vector2(BWLBE.x, BWLTI.y - walipini.wall.thickness * Math.tan(backWindowAngleRad))
+
+    // Pit bottom
+    const WPBB = new THREE.Vector2(-walipini.width / 2, - walipini.dig.depth)
+    const WPBF = new THREE.Vector2(walipini.width / 2, - walipini.dig.depth)
+
+    // Roof Top
+    const bwCutAngle = (90 - THREE.Math.radToDeg(backWindowAngleRad) + wsElevation) / 2
+    const joinCutAngle = THREE.Math.radToDeg(backWindowAngleRad) + bwCutAngle
+    const cutLength = walipini.roof.beam.height / Math.sin(toRad(bwCutAngle))
+    console.log('angles: ', bwCutAngle, joinCutAngle, cutLength)
+    const RTOP = new THREE.Vector2(SWLRT.x + cutLength * Math.cos(toRad(joinCutAngle)),
+        SWLRT.y + cutLength * Math.sin(toRad(joinCutAngle)))
+    const BWBT = new THREE.Vector2(BWLTE.x - walipini.roof.beam.height * Math.sin(backWindowAngleRad), BWLTE.y + 0.1)
+
+    return {
+        RTOP: RTOP,
+        BWBT: BWBT,
+
+        // Front Wall
+        FWLBI: FWLBI,
+        FWLBE: FWLBE,
+        FWLTE: FWLTE,
+        FWLTI: FWLTI,
+        FWLTM: FWLTM,
+
+        // Back Wall
+        BWLBE: BWLBE,
+        BWLTE: BWLTE,
+        BWLTI: BWLTI,
+        BWLBI: BWLBI,
+
+        // Side Wall
+        SWLBB: SWLBB,
+        SWLBF: SWLBF,
+        SWLDB: SWLDB,
+        SWLDF: SWLDF,
+        SWLRT: SWLRT,
+
+        // Pit bottom
+        WPBB: WPBB,
+        WPBF: WPBF
+    }
 }
 
 const frontWindow = (walipini, wsElevation) => {
@@ -248,6 +342,9 @@ const backWindow = (walipini, wsElevation) => {
     const bwp = walipini.width + walipini.wall.thickness * 2 - fwp
     const bwh = bwp / Math.cos(toRad(wsElevation))
     const backWindow = walipini.roof.backWindow
+    const kps = walipini.kps
+    const backWindowAngle = THREE.Math.radToDeg(Math.atan((kps.SWLRT.y - kps.BWLTI.y) / (kps.SWLRT.x - kps.BWLTI.x)))
+    console.log('backWindowAngle: ', backWindowAngle)
 
     return {
         width: walipini.length + walipini.wall.thickness * 2,
@@ -265,75 +362,10 @@ const backWindow = (walipini, wsElevation) => {
         },
 
         rotate: {
-            x: toRad(wsElevation),
+            x: toRad(backWindowAngle),
             y: toRad(90),
             z: 0
         }
-    }
-}
-
-const kps = (options) => {
-    const walipini = options.walipini
-    const wsElevation = options.winterSolsticeElevation
-
-    // Roof Top
-    const RTH = new THREE.Vector2(walipini.width / 2 + walipini.wall.thickness - walipini.roof.topDistance * Math.tan(toRad(wsElevation)),
-        walipini.wall.frontHeight + walipini.roof.topDistance)
-    const RTL = new THREE.Vector2(RTH.x + walipini.roof.beam.height * Math.sin(toRad(wsElevation)),
-        RTH.y - walipini.roof.beam.height * Math.cos(toRad(wsElevation)))
-
-    // Front Wall
-    const FWLBI = new THREE.Vector2(walipini.width / 2, 0)
-    const FWLBE = new THREE.Vector2(walipini.width / 2 + walipini.wall.thickness, 0)
-    const FWLTE = new THREE.Vector2(FWLBE.x, walipini.wall.frontHeight)
-    const FWLTI = new THREE.Vector2(FWLBI.x, Math.max(0, walipini.wall.frontHeight - walipini.wall.thickness * Math.tan(toRad(wsElevation))))
-    const FWLTM = new THREE.Vector2(FWLTE.x - Math.cos(toRad(wsElevation)) * walipini.roof.beam.height,
-        Math.max(walipini.wall.frontHeight - Math.sin(toRad(wsElevation)) * walipini.roof.beam.height, 0))
-    
-    // Back Wall
-    const BWLBE = new THREE.Vector2(-(walipini.width / 2 + walipini.wall.thickness), 0)
-    const BWLTE = new THREE.Vector2(BWLBE.x, walipini.wall.backHeight /*BWLTI_y - walipini.wall.thickness * ((RTL_y - BWLTI_y) / (RTL_x - BWLTI_x))*/)
-    const BWLTI = new THREE.Vector2(-walipini.width / 2, walipini.wall.backHeight)
-    const BWLBI = new THREE.Vector2(BWLTI.x, 0)
-
-    // Side Wall
-    const SWLBB = new THREE.Vector2(-walipini.door.width / 2, 0)
-    const SWLBF = new THREE.Vector2(walipini.door.width / 2, 0)
-    const SWLDB = new THREE.Vector2(SWLBB.x, walipini.door.height - walipini.dig.depth)
-    const SWLDF = new THREE.Vector2(SWLBF.x, walipini.door.height - walipini.dig.depth)
-    const SWLRT = new THREE.Vector2(RTL.x, RTL.y) // TODO
-
-    // Pit bottom
-    const WPBB = new THREE.Vector2(-walipini.width / 2, - walipini.dig.depth)
-    const WPBF = new THREE.Vector2(walipini.width / 2, - walipini.dig.depth)
-
-    return {
-        RTH: RTH,
-        RTL: RTL,
-
-        // Front Wall
-        FWLBI: FWLBI,
-        FWLBE: FWLBE,
-        FWLTE: FWLTE,
-        FWLTI: FWLTI,
-        FWLTM: FWLTM,
-
-        // Back Wall
-        BWLBE: BWLBE,
-        BWLTE: BWLTE,
-        BWLTI: BWLTI,
-        BWLBI: BWLBI,
-
-        // Side Wall
-        SWLBB: SWLBB,
-        SWLBF: SWLBF,
-        SWLDB: SWLDB,
-        SWLDF: SWLDF,
-        SWLRT: SWLRT,
-
-        // Pit bottom
-        WPBB: WPBB,
-        WPBF: WPBF
     }
 }
 
@@ -451,14 +483,14 @@ module.exports = {
 
 },{"./geometry":1,"./walls":7}],6:[function(require,module,exports){
 const THREE = require('three')
+const extrude = require('./geometry').extrude
 
 const create = (options) => {
-    const roof = options.walipini.roof
     const result = new THREE.Object3D()
 
-    result.add(createFrontWindow(roof))
-    result.add(createBackWindow(roof))
-    result.add(createBeams(roof))
+    result.add(createFrontWindow(options))
+    result.add(createBackWindow(options))
+    result.add(createBeams(options))
 
     return result
 }
@@ -466,11 +498,17 @@ const create = (options) => {
 /**
   * Create the front window    
   */
-const createFrontWindow = (roof) => {
-    const frontWindow = new THREE.Mesh(new THREE.BoxGeometry(roof.frontWindow.width, roof.frontWindow.height, roof.frontWindow.length))
-    frontWindow.rotateY(-roof.frontWindow.rotate.y)
-    frontWindow.rotateX(roof.frontWindow.rotate.x)
-    frontWindow.position.set(roof.frontWindow.translate.x-roof.frontWindow.height/2, roof.frontWindow.translate.y, roof.frontWindow.translate.z)
+const createFrontWindow = (options) => {
+    const kps = options.walipini.kps
+    const roof = options.walipini.roof
+    const wallThickness = options.walipini.wall.thickness
+    const vertices = [kps.FWLTM, kps.FWLTE, kps.RTOP, kps.SWLRT, kps.FWLTM]
+    const length = options.walipini.length + wallThickness * 2
+
+    const windowGeometry = extrude(vertices, length)
+    windowGeometry.translate(0, 0, - length / 2)
+    let frontWindow = new THREE.Mesh(windowGeometry)
+
     frontWindow.material = new THREE.MeshLambertMaterial({
         color: roof.frontWindow.color,
         transparent: roof.frontWindow.transparent,
@@ -484,11 +522,17 @@ const createFrontWindow = (roof) => {
 /**
   * Create the back window
   */
-const createBackWindow = (roof) => {
-    const backWindow = new THREE.Mesh(new THREE.BoxGeometry(roof.backWindow.width, roof.backWindow.height, roof.backWindow.length))
-    backWindow.rotateY(-roof.backWindow.rotate.y)
-    backWindow.rotateX(roof.backWindow.rotate.x)
-    backWindow.position.set(roof.backWindow.translate.x, roof.backWindow.translate.y, roof.backWindow.translate.z)
+const createBackWindow = (options) => {
+    const kps = options.walipini.kps
+    const roof = options.walipini.roof
+    const wallThickness = options.walipini.wall.thickness
+    const vertices = [kps.BWLTE, kps.SWLRT, kps.RTOP, kps.BWBT, kps.BWLTE]
+    const length = options.walipini.length + wallThickness * 2
+
+    const backWindowGeometry = extrude(vertices, length)
+    backWindowGeometry.translate(0, 0, - length / 2)
+    let backWindow = new THREE.Mesh(backWindowGeometry)
+
     backWindow.material = new THREE.MeshLambertMaterial({
         color: roof.backWindow.color,
         transparent: roof.backWindow.transparent,
@@ -499,12 +543,13 @@ const createBackWindow = (roof) => {
     return backWindow
 }
 
-const createBeams = (roof) => {
+const createBeams = (options) => {
+    const roof = options.walipini.roof
     const fullLength = roof.frontWindow.width
     const beamdistance = fullLength / roof.beam.numBeams
     const allBeams = new THREE.Object3D()
     const trans = - fullLength / 2
-    const fullBeam = createFullBeam(roof)
+    const fullBeam = createFullBeam(options)
 
     for(var b = 0; b <= roof.beam.numBeams; b++) {
         let clone = fullBeam.clone(true)
@@ -515,21 +560,24 @@ const createBeams = (roof) => {
     return allBeams
 }
 
-const createFullBeam = (roof) => {
+const createFullBeam = (options) => {
     const fullBeam = new THREE.Object3D()
 
-    fullBeam.add(createFrontBeam(roof))
-    fullBeam.add(createBackBeam(roof))
+    fullBeam.add(createFrontBeam(options))
+    fullBeam.add(createBackBeam(options))
 
     return fullBeam
 }
 
-const createFrontBeam = (roof) => {
-    const frontWindow = roof.frontWindow
-    const beamLength = roof.frontWindow.length
-    const frontBeam = new THREE.Mesh(new THREE.BoxGeometry(beamLength, roof.beam.height, roof.beam.width))
-    frontBeam.rotateZ(roof.frontWindow.rotate.x)
-    frontBeam.position.set(frontWindow.translate.x - frontWindow.height/2, frontWindow.translate.y, frontWindow.translate.z)
+const createFrontBeam = (options) => {
+    const kps = options.walipini.kps
+    const roof = options.walipini.roof
+    const beamWidth = roof.beam.width
+    const vertices = [kps.BWLTE, kps.SWLRT, kps.RTOP, kps.BWBT, kps.BWLTE]
+
+    const frontBeamGeometry = extrude(vertices, beamWidth)
+    let frontBeam = new THREE.Mesh(frontBeamGeometry)
+
     frontBeam.material = new THREE.MeshLambertMaterial({
         color: 'brown',
         transparent: false
@@ -539,12 +587,15 @@ const createFrontBeam = (roof) => {
     return frontBeam
 }
 
-const createBackBeam = (roof) => {
-    const backWindow = roof.backWindow
-    const beamLength = roof.backWindow.length
-    const backBeam = new THREE.Mesh(new THREE.BoxGeometry(beamLength, roof.beam.height, roof.beam.width))
-    backBeam.rotateZ(roof.backWindow.rotate.x)
-    backBeam.position.set(backWindow.translate.x - backWindow.height/2, backWindow.translate.y, backWindow.translate.z)
+const createBackBeam = (options) => {
+    const kps = options.walipini.kps
+    const roof = options.walipini.roof
+    const beamWidth = roof.beam.width
+    const vertices = [kps.FWLTM, kps.FWLTE, kps.RTOP, kps.SWLRT, kps.FWLTM]
+
+    const backBeamGeometry = extrude(vertices, beamWidth)
+    let backBeam = new THREE.Mesh(backBeamGeometry)
+
     backBeam.material = new THREE.MeshLambertMaterial({
         color: 'brown',
         transparent: false
@@ -558,25 +609,9 @@ module.exports = {
     create: create
 }
 
-},{"three":9}],7:[function(require,module,exports){
+},{"./geometry":1,"three":9}],7:[function(require,module,exports){
 const THREE = require('three')
-
-const extrude = (vertices, height) => {
-
-    var shape = new THREE.Shape()
-
-    shape.moveTo(vertices[0].x, vertices[0].y)
-    for (var i=1; i < vertices.length; i++) {
-        shape.lineTo(vertices[i].x, vertices[i].y)
-    }
-    shape.lineTo(vertices[0].x, vertices[0].y)
-
-    var settings = {
-        amount: height,
-        bevelEnabled: false
-    }
-    return new THREE.ExtrudeGeometry(shape, settings)
-}
+const extrude = require('./geometry').extrude
 
 const createWall = (geometry, tx, ty, tz) => {
     geometry.translate(tx, ty, tz)
@@ -651,7 +686,7 @@ module.exports = {
     createSideWallGeometry: createSideWallGeometry
 }
 
-},{"three":9}],8:[function(require,module,exports){
+},{"./geometry":1,"three":9}],8:[function(require,module,exports){
 'use strict';
 	
 	var ThreeBSP,
@@ -45617,17 +45652,17 @@ const create = function(scene) {
             width: 3,
             length: 10,
             dig: {
-                depth: 0.3
+                depth: 0.75
             },
             orientation: 90,
             wall: {
                 thickness: 0.5,
                 frontHeight: 0.75,
-                backHeight: 1.76,
+                backHeight: 1.25,
                 color: 'gray'
             },
             roof: {
-                topDistance: 2.25,
+                topDistance: 1.5,
                 beam: {
                     maxDistance: 0.8,
                     width: 0.05,
