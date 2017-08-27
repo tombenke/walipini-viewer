@@ -141,6 +141,7 @@ const create = function(options) {
     // Create Walipini Dig
     var walipiniDig = new THREE.Mesh(new THREE.BoxGeometry(walipini.width, walipini.height, walipini.length))
     walipiniDig.position.set(0, walipini.height/2-walipini.dig.depth, 0)
+    walipiniDig.rotateY(THREE.Math.degToRad(-options.walipini.orientation))
     var walipiniDigBSP = new ThreeBSP(walipiniDig)
 
     // Create Grass
@@ -491,6 +492,7 @@ const create = (options) => {
     result.add(createFrontWindow(options))
     result.add(createBackWindow(options))
     result.add(createBeams(options))
+    result.rotateY(THREE.Math.degToRad(- options.walipini.orientation))
 
     return result
 }
@@ -615,7 +617,6 @@ const extrude = require('./geometry').extrude
 
 const createWall = (geometry, tx, ty, tz) => {
     geometry.translate(tx, ty, tz)
-    // geometry.rotateY(toRad(options.walipini.orientation))
 
     var wall = new THREE.Mesh(geometry)
 
@@ -646,6 +647,7 @@ const create = (options) => {
     result.add(backWall)
     result.add(sideWallLeft)
     result.add(sideWallRight)
+    result.rotateY(THREE.Math.degToRad(- options.walipini.orientation))
 
     return result
 }
@@ -45654,7 +45656,7 @@ const create = function(scene) {
             dig: {
                 depth: 0.75
             },
-            orientation: 90,
+            orientation: 30,
             wall: {
                 thickness: 0.5,
                 frontHeight: 0.75,
