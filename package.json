@@ -48,5 +48,7 @@
     "build": "npm run browserify;",
     "style": "cp -r ../bootstrap/dist/css/* dist/css/; cp -r ../bootstrap/dist/fonts/* dist/fonts/; cp -r ../bootstrap/dist/js/bootstrap* dist/js/; cp node_modules/bootstrap-slider/dist/css/bootstrap-slider.min.css dist/css/"
   },
-  "pre-push": []
+  "pre-push": [
+      "lint"
+  ]
 }

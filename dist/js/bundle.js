@@ -45573,11 +45573,11 @@ module.exports = {
     main: main
 }
 
-},{"./world":12,"three":16,"three-orbit-controls":15}],12:[function(require,module,exports){
+},{"./world":12,"three":15,"three-orbit-controls":14}],12:[function(require,module,exports){
 const THREE = require('three')
-const ThreeBSP = require('three-js-csg')(THREE)
 const walipini = require('walipini-model-3d')
 
+/*
 const addPlane = function(colori, scene) {
     // Add plane
     var planeGeometry = new THREE.PlaneGeometry(400, 400);
@@ -45590,6 +45590,7 @@ const addPlane = function(colori, scene) {
     plane.position.y = -0.2;
     scene.add(plane);
 };
+*/
 
 var addLights = function(scene) {
     // Set the ambient light
@@ -45614,6 +45615,7 @@ var addLights = function(scene) {
     scene.add(spotLight2);
 };
 
+/*
 var createCube = function(x, y, z, width, height, length, color, scene) {
     // Add some geometry
     var cubeGeometry = new THREE.BoxGeometry(width, height, length);
@@ -45630,6 +45632,7 @@ var createCube = function(x, y, z, width, height, length, color, scene) {
 var drawCube = function(x, y, z, width, height, length, color, scene) {
     scene.add(createCube(x, y, z, width, height, length, color, scene));
 };
+*/
 
 const create = function(scene) {
     const walipiniOptions = {
@@ -45701,7 +45704,7 @@ module.exports = {
     create: create
 }
 
-},{"three":16,"three-js-csg":14,"walipini-model-3d":3}],13:[function(require,module,exports){
+},{"three":15,"walipini-model-3d":3}],13:[function(require,module,exports){
 /*!
   * domready (c) Dustin Diaz 2014 - License MIT
   */
@@ -45734,8 +45737,6 @@ module.exports = {
 });
 
 },{}],14:[function(require,module,exports){
-arguments[4][8][0].apply(exports,arguments)
-},{"dup":8}],15:[function(require,module,exports){
 module.exports = function( THREE ) {
 	/**
 	 * @author qiao / https://github.com/qiao
@@ -46757,6 +46758,6 @@ module.exports = function( THREE ) {
 	return OrbitControls;
 };
 
-},{}],16:[function(require,module,exports){
+},{}],15:[function(require,module,exports){
 arguments[4][9][0].apply(exports,arguments)
 },{"dup":9}]},{},[10]);
