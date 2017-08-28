@@ -1,24 +1,198 @@
 (function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return a(o,!0);if(i)return i(o,!0);var f=new Error("Cannot find module '"+o+"'");throw f.code="MODULE_NOT_FOUND",f}var l=n[o]={exports:{}};t[o][0].call(l.exports,function(e){var n=t[o][1][e];return s(n?n:e)},l,l.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s})({1:[function(require,module,exports){
-const THREE = require('three')
-
-const calculateVolume = (object) => {
-    let volumes = 0.0
-
-    for(var i = 0; i < object.faces.length; i++) {
-        let Pi = object.faces[i].a
-        let Qi = object.faces[i].b
-        let Ri = object.faces[i].c
-
-        let P = new THREE.Vector3(object.vertices[Pi].x, object.vertices[Pi].y, object.vertices[Pi].z)
-        let Q = new THREE.Vector3(object.vertices[Qi].x, object.vertices[Qi].y, object.vertices[Qi].z)
-        let R = new THREE.Vector3(object.vertices[Ri].x, object.vertices[Ri].y, object.vertices[Ri].z)
-        volumes += volumeOfT(P, Q, R)
+module.exports={
+    "winterSolsticeElevation": 18.65,
+    "ground": {
+        "width": 20,
+        "length": 20,
+        "grass": {
+            "thickness": 0.05,
+            "color": "green"
+        },
+        "soil": {
+            "thickness": 0.4,
+            "color": "brown"
+        },
+        "underSoil": {
+            "thickness": 4,
+            "color": "yellow"
+        }
+    },
+    "walipini": {
+        "orientation": 10,
+        "width": 3,
+        "length": 10,
+        "dig": {
+            "depth": 0.75
+        },
+        "wall": {
+            "thickness": 0.5,
+            "frontHeight": 0.75,
+            "backHeight": 1.25,
+            "color": "gray"
+        },
+        "roof": {
+            "topDistance": 1.5,
+            "beam": {
+                "maxDistance": 0.8,
+                "width": 0.05,
+                "height": 0.1
+            },
+            "frontWindow": {
+                "color": "white",
+                "transparent": true,
+                "opacity": 0.4,
+                "castShadow": false
+            },
+            "backWindow": {
+                "color": "brown",
+                "transparent": false,
+                "opacity": 0.4,
+                "castShadow": true
+            }
+        },
+        "door": {
+            "width": 0.8,
+            "height": 1.8
+        }
     }
-
-    return Math.abs(volumes)
 }
 
-const volumeOfT = (p1, p2, p3) => {
+},{}],2:[function(require,module,exports){
+'use strict';
+
+var defaults = require('./defaults.json');
+var ranges = require('./ranges.json');
+
+module.exports = {
+    defaults: defaults,
+    ranges: ranges
+};
+
+},{"./defaults.json":1,"./ranges.json":3}],3:[function(require,module,exports){
+module.exports={
+    "winterSolsticeElevation": {
+        "from": 0,
+        "to:": 90,
+        "step": 1
+    },
+    "ground": {
+        "grass": {
+            "thickness": {
+                "from": 0.01,
+                "to:": 0.05,
+                "step": 0.01
+            }
+        },
+        "soil": {
+            "thickness": {
+                "from": 0,
+                "to:": 1,
+                "step": 0.01 
+            }
+        }
+    },
+    "walipini": {
+        "orientation": {
+                "from": 0,
+                "to:": 90,
+                "step": 1
+            },
+        "width": {
+                "from": 2.5,
+                "to:": 6,
+                "step": 0.1
+            },
+        "length": {
+                "from": 15,
+                "to:": 3,
+                "step": 0.1
+            },
+        "dig": {
+            "depth": {
+                "from": 0,
+                "to:": 3,
+                "step": 0.1
+            }
+        },
+        "wall": {
+            "thickness": {
+                "from": 0.2,
+                "to:": 1,
+                "step": 0.01
+            },
+            "frontHeight": {
+                "from": 0,
+                "to:": 1.5,
+                "step": 0.01
+            },
+            "backHeight": {
+                "from": 0,
+                "to:": 3,
+                "step": 0.01
+            }
+        },
+        "roof": {
+            "topDistance": {
+                "from": 1,
+                "to:": 3,
+                "step": 0.01
+            },
+            "beam": {
+                "maxDistance": {
+                    "from": 0.6,
+                    "to:": 1,
+                    "step": 0.01
+                },
+                "width": {
+                    "from": 0.05,
+                    "to:": 0.15,
+                    "step": 0.01
+                },
+                "height": {
+                    "from": 0.075,
+                    "to:": 0.25,
+                    "step": 0.01
+                }
+            }
+        },
+        "door": {
+            "width": {
+                "from": 0.6,
+                "to:": 1.2,
+                "step": 0.01
+            },
+            "height": {
+                "from": 1.5,
+                "to:": 2.5,
+                "step": 0.01
+            }
+        }
+    }
+}
+
+},{}],4:[function(require,module,exports){
+'use strict';
+
+var THREE = require('three');
+
+var calculateVolume = function calculateVolume(object) {
+    var volumes = 0.0;
+
+    for (var i = 0; i < object.faces.length; i++) {
+        var Pi = object.faces[i].a;
+        var Qi = object.faces[i].b;
+        var Ri = object.faces[i].c;
+
+        var P = new THREE.Vector3(object.vertices[Pi].x, object.vertices[Pi].y, object.vertices[Pi].z);
+        var Q = new THREE.Vector3(object.vertices[Qi].x, object.vertices[Qi].y, object.vertices[Qi].z);
+        var R = new THREE.Vector3(object.vertices[Ri].x, object.vertices[Ri].y, object.vertices[Ri].z);
+        volumes += volumeOfT(P, Q, R);
+    }
+
+    return Math.abs(volumes);
+};
+
+var volumeOfT = function volumeOfT(p1, p2, p3) {
     var v321 = p3.x * p2.y * p1.z;
     var v231 = p2.x * p3.y * p1.z;
     var v312 = p3.x * p1.y * p2.z;
@@ -26,258 +200,261 @@ const volumeOfT = (p1, p2, p3) => {
     var v213 = p2.x * p1.y * p3.z;
     var v123 = p1.x * p2.y * p3.z;
     return (-v321 + v231 + v312 - v132 - v213 + v123) / 6.0;
-}
+};
 
-const extrude = (vertices, height) => {
+var extrude = function extrude(vertices, height) {
 
-    var shape = new THREE.Shape()
+    var shape = new THREE.Shape();
 
-    shape.moveTo(vertices[0].x, vertices[0].y)
-    for (var i=1; i < vertices.length; i++) {
-        shape.lineTo(vertices[i].x, vertices[i].y)
+    shape.moveTo(vertices[0].x, vertices[0].y);
+    for (var i = 1; i < vertices.length; i++) {
+        shape.lineTo(vertices[i].x, vertices[i].y);
     }
-    shape.lineTo(vertices[0].x, vertices[0].y)
+    shape.lineTo(vertices[0].x, vertices[0].y);
 
     var settings = {
         amount: height,
         bevelEnabled: false
-    }
-    return new THREE.ExtrudeGeometry(shape, settings)
-}
-
+    };
+    return new THREE.ExtrudeGeometry(shape, settings);
+};
 
 module.exports = {
     volume: calculateVolume,
     extrude: extrude
-}
 
-/*
-function customRound(number, fractiondigits) {
-    with(Math) {
-        return round(number * pow(10, fractiondigits)) / pow(10, fractiondigits);
+    /*
+    function customRound(number, fractiondigits) {
+        with(Math) {
+            return round(number * pow(10, fractiondigits)) / pow(10, fractiondigits);
+        }
     }
-}
-
-function SuperficialAreaOfMesh(points) {
-
-    var _len = points.length,
-        _area = 0.0;
-
-    if (!_len) return 0.0;
-
-    let i = 0
-    let vols = 0
-    let va
-    let vb
-    let vc
-
-    do  {
-        va = {
-            X: points[i],
-            Y: points[i + 1],
-            Z: points[i + 2]
+    
+    function SuperficialAreaOfMesh(points) {
+    
+        var _len = points.length,
+            _area = 0.0;
+    
+        if (!_len) return 0.0;
+    
+        let i = 0
+        let vols = 0
+        let va
+        let vb
+        let vc
+    
+        do  {
+            va = {
+                X: points[i],
+                Y: points[i + 1],
+                Z: points[i + 2]
+            }
+    
+            vb = {
+                X: points[i + 3],
+                Y: points[i + 4],
+                Z: points[i + 5]
+            }
+    
+            vc = {
+                X: points[i + 6],
+                Y: points[i + 7],
+                Z: points[i + 8]
+            }
+    
+            var ab = {
+                X: vb.X - va.X,
+                Y: vb.Y - va.Y,
+                Z: vb.Z - va.Z
+            }
+            //vb.clone().sub(va);  var ac = {X:vc.X-va.X,Y:vc.Y-va.Y,Z:va.Z-vc.Z};
+            //vc.clone().sub(va);   var cross = new THREE.Vector3();
+    
+            cross = crossVectors(ab, ac)
+            _area += Math.sqrt(Math.pow(cross.X, 2) + Math.pow(cross.Y, 2) + Math.pow(cross.Z, 2)) / 2
+            i += 9
         }
-
-        vb = {
-            X: points[i + 3],
-            Y: points[i + 4],
-            Z: points[i + 5]
-        }
-
-        vc = {
-            X: points[i + 6],
-            Y: points[i + 7],
-            Z: points[i + 8]
-        }
-
-        var ab = {
-            X: vb.X - va.X,
-            Y: vb.Y - va.Y,
-            Z: vb.Z - va.Z
-        }
-        //vb.clone().sub(va);  var ac = {X:vc.X-va.X,Y:vc.Y-va.Y,Z:va.Z-vc.Z};
-        //vc.clone().sub(va);   var cross = new THREE.Vector3();
-
-        cross = crossVectors(ab, ac)
-        _area += Math.sqrt(Math.pow(cross.X, 2) + Math.pow(cross.Y, 2) + Math.pow(cross.Z, 2)) / 2
-        i += 9
+        while (i < points.length)
+    
+        return customRound(Math.abs(_area) / 100, 2)
     }
-    while (i < points.length)
-
-    return customRound(Math.abs(_area) / 100, 2)
-}
-
-function crossVectors( a, b ) {
-    var ax = a.X
-    var ay = a.Y
-    var az = a.Z
-    var bx = b.X
-    var by = b.Y
-    var bz = b.Z
-    var P = {
-        X: ay * bz - az * by,
-        Y: az * bx - ax * bz,
-        Z: ax * by - ay * bx
+    
+    function crossVectors( a, b ) {
+        var ax = a.X
+        var ay = a.Y
+        var az = a.Z
+        var bx = b.X
+        var by = b.Y
+        var bz = b.Z
+        var P = {
+            X: ay * bz - az * by,
+            Y: az * bx - ax * bz,
+            Z: ax * by - ay * bx
+        }
+    
+       return P;
     }
+    
+    */
 
-   return P;
-}
+};
 
-*/
+},{"three":12}],5:[function(require,module,exports){
+'use strict';
 
+var THREE = require('three');
+var ThreeBSP = require('three-js-csg')(THREE);
 
-
-},{"three":9}],2:[function(require,module,exports){
-const THREE = require('three')
-const ThreeBSP = require('three-js-csg')(THREE)
-
-const create = function(options) {
-    const ground = options.ground
-    const grass = ground.grass
-    const soil = ground.soil
-    const underSoil = ground.underSoil
-    const walipini = options.walipini
+var create = function create(options) {
+    var ground = options.ground;
+    var grass = ground.grass;
+    var soil = ground.soil;
+    var underSoil = ground.underSoil;
+    var walipini = options.walipini;
 
     // Create Walipini Dig
-    var walipiniDig = new THREE.Mesh(new THREE.BoxGeometry(walipini.width, walipini.height, walipini.length))
-    walipiniDig.position.set(0, walipini.height/2-walipini.dig.depth, 0)
-    walipiniDig.rotateY(THREE.Math.degToRad(-options.walipini.orientation))
-    var walipiniDigBSP = new ThreeBSP(walipiniDig)
+    var walipiniDig = new THREE.Mesh(new THREE.BoxGeometry(walipini.width, walipini.height, walipini.length));
+    walipiniDig.position.set(0, walipini.height / 2 - walipini.dig.depth, 0);
+    walipiniDig.rotateY(THREE.Math.degToRad(-options.walipini.orientation));
+    var walipiniDigBSP = new ThreeBSP(walipiniDig);
 
     // Create Grass
-    var grassVol = new THREE.Mesh(new THREE.BoxGeometry(ground.width, grass.thickness, ground.length))
-    grassVol.position.set(0, -grass.thickness/2, 0)
-    var grassVolBSP = new ThreeBSP(grassVol)
-    var grassWithDig = grassVolBSP.subtract(walipiniDigBSP).toMesh()
-    grassWithDig.material =  new THREE.MeshLambertMaterial({ color: grass.color })
-    grassWithDig.receiveShadow = true
-    grassWithDig.castShadow = true
+    var grassVol = new THREE.Mesh(new THREE.BoxGeometry(ground.width, grass.thickness, ground.length));
+    grassVol.position.set(0, -grass.thickness / 2, 0);
+    var grassVolBSP = new ThreeBSP(grassVol);
+    var grassWithDig = grassVolBSP.subtract(walipiniDigBSP).toMesh();
+    grassWithDig.material = new THREE.MeshLambertMaterial({ color: grass.color });
+    grassWithDig.receiveShadow = true;
+    grassWithDig.castShadow = true;
 
     // Create Soil
-    var soilVol = new THREE.Mesh( new THREE.BoxGeometry(ground.width, soil.thickness, ground.length))
-    soilVol.position.set(0, -(grass.thickness + soil.thickness/2), 0)
-    var soilVolBSP = new ThreeBSP(soilVol)
-    var soilWithDig = soilVolBSP.subtract(walipiniDigBSP).toMesh()
-    soilWithDig.material =  new THREE.MeshLambertMaterial({ color: soil.color })
-    soilWithDig.receiveShadow = true
-    soilWithDig.castShadow = true
+    var soilVol = new THREE.Mesh(new THREE.BoxGeometry(ground.width, soil.thickness, ground.length));
+    soilVol.position.set(0, -(grass.thickness + soil.thickness / 2), 0);
+    var soilVolBSP = new ThreeBSP(soilVol);
+    var soilWithDig = soilVolBSP.subtract(walipiniDigBSP).toMesh();
+    soilWithDig.material = new THREE.MeshLambertMaterial({ color: soil.color });
+    soilWithDig.receiveShadow = true;
+    soilWithDig.castShadow = true;
 
     // Create Under-Soil
-    var underSoilVol = new THREE.Mesh(new THREE.BoxGeometry(ground.width, underSoil.thickness, ground.length, underSoil.color))
-    underSoilVol.position.set(0, -(grass.thickness + soil.thickness + underSoil.thickness/2), 0)
-    var underSoilVolBSP = new ThreeBSP(underSoilVol)
-    var underSoilWithDig = underSoilVolBSP.subtract(walipiniDigBSP).toMesh()
-    underSoilWithDig.receiveShadow = true
-    underSoilWithDig.castShadow = true
-    underSoilWithDig.material =  new THREE.MeshLambertMaterial({
+    var underSoilVol = new THREE.Mesh(new THREE.BoxGeometry(ground.width, underSoil.thickness, ground.length, underSoil.color));
+    underSoilVol.position.set(0, -(grass.thickness + soil.thickness + underSoil.thickness / 2), 0);
+    var underSoilVolBSP = new ThreeBSP(underSoilVol);
+    var underSoilWithDig = underSoilVolBSP.subtract(walipiniDigBSP).toMesh();
+    underSoilWithDig.receiveShadow = true;
+    underSoilWithDig.castShadow = true;
+    underSoilWithDig.material = new THREE.MeshLambertMaterial({
         opacity: 0.6,
         transparent: false,
         color: underSoil.color
-    })
+    });
 
-    const result = new THREE.Object3D()
-    result.add(grassWithDig)
-    result.add(soilWithDig)
-    result.add(underSoilWithDig)
+    var result = new THREE.Object3D();
+    result.add(grassWithDig);
+    result.add(soilWithDig);
+    result.add(underSoilWithDig);
 
-    return result
-}
+    return result;
+};
 
 module.exports = {
     create: create
-}
+};
 
-},{"three":9,"three-js-csg":8}],3:[function(require,module,exports){
-const THREE = require('three')
-const ground = require('./ground')
-const walls = require('./walls')
-const roof = require('./roof')
-const parameters = require('./parameters')
-const reports = require('./reports')
+},{"three":12,"three-js-csg":11}],6:[function(require,module,exports){
+'use strict';
 
-const create = (rawOptions) => {
-    const options = parameters.update(rawOptions)
-    const walipini = new THREE.Object3D()
+var THREE = require('three');
+var ground = require('./ground');
+var walls = require('./walls');
+var roof = require('./roof');
+var parameters = require('./parameters');
+var reports = require('./reports');
+var config = require('../config/');
 
-    walipini.add(ground.create(options))
-    walipini.add(walls.create(options))
-    walipini.add(roof.create(options))
+var create = function create(rawOptions) {
+    var options = parameters.update(rawOptions);
+    var walipini = new THREE.Object3D();
 
-    return walipini
-}
+    walipini.add(ground.create(options));
+    walipini.add(walls.create(options));
+    walipini.add(roof.create(options));
 
-const makeReports = (rawOptions) => {
-    const options = parameters.update(rawOptions)
-    return reports.make(options)
-}
+    return walipini;
+};
+
+var makeReports = function makeReports(rawOptions) {
+    var options = parameters.update(rawOptions);
+    return reports.make(options);
+};
 
 module.exports = {
     create: create,
-    reports: makeReports
-}
+    reports: makeReports,
+    config: config
+};
 
-},{"./ground":2,"./parameters":4,"./reports":5,"./roof":6,"./walls":7,"three":9}],4:[function(require,module,exports){
-const THREE = require('three')
-const toRad = THREE.Math.degToRad
+},{"../config/":2,"./ground":5,"./parameters":7,"./reports":8,"./roof":9,"./walls":10,"three":12}],7:[function(require,module,exports){
+'use strict';
 
-const update = (options) => {
-    const walipini = options.walipini
-    const wsElevation = options.winterSolsticeElevation
+var THREE = require('three');
+var toRad = THREE.Math.degToRad;
 
-    walipini.roof.topHeight = walipini.wall.frontHeight + walipini.roof.topDistance
-    walipini.height = walipini.dig.depth + walipini.roof.topHeight
+var update = function update(options) {
+    var walipini = options.walipini;
+    var wsElevation = options.winterSolsticeElevation;
+
+    walipini.roof.topHeight = walipini.wall.frontHeight + walipini.roof.topDistance;
+    walipini.height = walipini.dig.depth + walipini.roof.topHeight;
 
     // Calculate reference points
-    walipini.kps = kps(options)
+    walipini.kps = kps(options);
 
     // Calculate windows
-    walipini.roof.frontWindow = frontWindow(walipini, wsElevation)
-    walipini.roof.backWindow = backWindow(walipini, wsElevation)
-    walipini.roof.beam.numBeams = numBeams(walipini)
-    console.log(options)
-    return options
-}
+    walipini.roof.frontWindow = frontWindow(walipini, wsElevation);
+    walipini.roof.backWindow = backWindow(walipini, wsElevation);
+    walipini.roof.beam.numBeams = numBeams(walipini);
+    console.log(options);
+    return options;
+};
 
-const kps = (options) => {
-    const walipini = options.walipini
-    const wsElevation = options.winterSolsticeElevation
-    const walipiniInnerHeight = walipini.wall.frontHeight + walipini.roof.topDistance
+var kps = function kps(options) {
+    var walipini = options.walipini;
+    var wsElevation = options.winterSolsticeElevation;
+    var walipiniInnerHeight = walipini.wall.frontHeight + walipini.roof.topDistance;
 
     // Front Wall
-    const FWLBI = new THREE.Vector2(walipini.width / 2, 0)
-    const FWLBE = new THREE.Vector2(walipini.width / 2 + walipini.wall.thickness, 0)
-    const FWLTE = new THREE.Vector2(FWLBE.x, walipini.wall.frontHeight)
-    const FWLTI = new THREE.Vector2(FWLBI.x, Math.max(0, walipini.wall.frontHeight - walipini.wall.thickness * Math.tan(toRad(wsElevation))))
-    const FWLTM = new THREE.Vector2(FWLTE.x - Math.cos(toRad(wsElevation)) * walipini.roof.beam.height,
-        Math.max(walipini.wall.frontHeight - Math.sin(toRad(wsElevation)) * walipini.roof.beam.height, 0))
-    
+    var FWLBI = new THREE.Vector2(walipini.width / 2, 0);
+    var FWLBE = new THREE.Vector2(walipini.width / 2 + walipini.wall.thickness, 0);
+    var FWLTE = new THREE.Vector2(FWLBE.x, walipini.wall.frontHeight);
+    var FWLTI = new THREE.Vector2(FWLBI.x, Math.max(0, walipini.wall.frontHeight - walipini.wall.thickness * Math.tan(toRad(wsElevation))));
+    var FWLTM = new THREE.Vector2(FWLTE.x - Math.cos(toRad(wsElevation)) * walipini.roof.beam.height, Math.max(walipini.wall.frontHeight - Math.sin(toRad(wsElevation)) * walipini.roof.beam.height, 0));
+
     // Side Wall
-    const SWLBB = new THREE.Vector2(-walipini.door.width / 2, 0)
-    const SWLBF = new THREE.Vector2(walipini.door.width / 2, 0)
-    const SWLDB = new THREE.Vector2(SWLBB.x, walipini.door.height - walipini.dig.depth)
-    const SWLDF = new THREE.Vector2(SWLBF.x, walipini.door.height - walipini.dig.depth)
-    const SWLRT = new THREE.Vector2(FWLTM.x - (walipiniInnerHeight - FWLTM.y) * Math.tan(toRad(wsElevation)),
-        walipiniInnerHeight)
+    var SWLBB = new THREE.Vector2(-walipini.door.width / 2, 0);
+    var SWLBF = new THREE.Vector2(walipini.door.width / 2, 0);
+    var SWLDB = new THREE.Vector2(SWLBB.x, walipini.door.height - walipini.dig.depth);
+    var SWLDF = new THREE.Vector2(SWLBF.x, walipini.door.height - walipini.dig.depth);
+    var SWLRT = new THREE.Vector2(FWLTM.x - (walipiniInnerHeight - FWLTM.y) * Math.tan(toRad(wsElevation)), walipiniInnerHeight);
 
     // Back Wall
-    const BWLTI = new THREE.Vector2(-walipini.width / 2, walipini.wall.backHeight)
-    const BWLBI = new THREE.Vector2(BWLTI.x, 0)
-    const BWLBE = new THREE.Vector2(-(walipini.width / 2 + walipini.wall.thickness), 0)
-    const backWindowAngleRad = Math.atan((SWLRT.y - BWLTI.y) / (SWLRT.x - BWLTI.x))
-    const BWLTE = new THREE.Vector2(BWLBE.x, BWLTI.y - walipini.wall.thickness * Math.tan(backWindowAngleRad))
+    var BWLTI = new THREE.Vector2(-walipini.width / 2, walipini.wall.backHeight);
+    var BWLBI = new THREE.Vector2(BWLTI.x, 0);
+    var BWLBE = new THREE.Vector2(-(walipini.width / 2 + walipini.wall.thickness), 0);
+    var backWindowAngleRad = Math.atan((SWLRT.y - BWLTI.y) / (SWLRT.x - BWLTI.x));
+    var BWLTE = new THREE.Vector2(BWLBE.x, BWLTI.y - walipini.wall.thickness * Math.tan(backWindowAngleRad));
 
     // Pit bottom
-    const WPBB = new THREE.Vector2(-walipini.width / 2, - walipini.dig.depth)
-    const WPBF = new THREE.Vector2(walipini.width / 2, - walipini.dig.depth)
+    var WPBB = new THREE.Vector2(-walipini.width / 2, -walipini.dig.depth);
+    var WPBF = new THREE.Vector2(walipini.width / 2, -walipini.dig.depth);
 
     // Roof Top
-    const bwCutAngle = (90 - THREE.Math.radToDeg(backWindowAngleRad) + wsElevation) / 2
-    const joinCutAngle = THREE.Math.radToDeg(backWindowAngleRad) + bwCutAngle
-    const cutLength = walipini.roof.beam.height / Math.sin(toRad(bwCutAngle))
-    console.log('angles: ', bwCutAngle, joinCutAngle, cutLength)
-    const RTOP = new THREE.Vector2(SWLRT.x + cutLength * Math.cos(toRad(joinCutAngle)),
-        SWLRT.y + cutLength * Math.sin(toRad(joinCutAngle)))
-    const BWBT = new THREE.Vector2(BWLTE.x - walipini.roof.beam.height * Math.sin(backWindowAngleRad), BWLTE.y + 0.1)
+    var bwCutAngle = (90 - THREE.Math.radToDeg(backWindowAngleRad) + wsElevation) / 2;
+    var joinCutAngle = THREE.Math.radToDeg(backWindowAngleRad) + bwCutAngle;
+    var cutLength = walipini.roof.beam.height / Math.sin(toRad(bwCutAngle));
+    console.log('angles: ', bwCutAngle, joinCutAngle, cutLength);
+    var RTOP = new THREE.Vector2(SWLRT.x + cutLength * Math.cos(toRad(joinCutAngle)), SWLRT.y + cutLength * Math.sin(toRad(joinCutAngle)));
+    var BWBT = new THREE.Vector2(BWLTE.x - walipini.roof.beam.height * Math.sin(backWindowAngleRad), BWLTE.y + 0.1);
 
     return {
         RTOP: RTOP,
@@ -306,13 +483,13 @@ const kps = (options) => {
         // Pit bottom
         WPBB: WPBB,
         WPBF: WPBF
-    }
-}
+    };
+};
 
-const frontWindow = (walipini, wsElevation) => {
-    const fwh = frontWindowHeight(walipini, wsElevation)
-    const fwp = frontWindowProjection(walipini, wsElevation)
-    const frontWindow = walipini.roof.frontWindow
+var frontWindow = function frontWindow(walipini, wsElevation) {
+    var fwh = frontWindowHeight(walipini, wsElevation);
+    var fwp = frontWindowProjection(walipini, wsElevation);
+    var frontWindow = walipini.roof.frontWindow;
 
     return {
         width: walipini.length + walipini.wall.thickness * 2,
@@ -325,27 +502,27 @@ const frontWindow = (walipini, wsElevation) => {
 
         translate: {
             x: walipini.width / 2 + walipini.wall.thickness - fwp / 2,
-            y: roofHeight(walipini) - (fwh * Math.cos(wsElevation) /2),
+            y: roofHeight(walipini) - fwh * Math.cos(wsElevation) / 2,
             z: 0
         },
 
         rotate: {
-            x: toRad(wsElevation+90),
+            x: toRad(wsElevation + 90),
             y: toRad(90),
             z: 0
 
         }
-    }
-}
+    };
+};
 
-const backWindow = (walipini, wsElevation) => {
-    const fwp = frontWindowProjection(walipini, wsElevation)
-    const bwp = walipini.width + walipini.wall.thickness * 2 - fwp
-    const bwh = bwp / Math.cos(toRad(wsElevation))
-    const backWindow = walipini.roof.backWindow
-    const kps = walipini.kps
-    const backWindowAngle = THREE.Math.radToDeg(Math.atan((kps.SWLRT.y - kps.BWLTI.y) / (kps.SWLRT.x - kps.BWLTI.x)))
-    console.log('backWindowAngle: ', backWindowAngle)
+var backWindow = function backWindow(walipini, wsElevation) {
+    var fwp = frontWindowProjection(walipini, wsElevation);
+    var bwp = walipini.width + walipini.wall.thickness * 2 - fwp;
+    var bwh = bwp / Math.cos(toRad(wsElevation));
+    var backWindow = walipini.roof.backWindow;
+    var kps = walipini.kps;
+    var backWindowAngle = THREE.Math.radToDeg(Math.atan((kps.SWLRT.y - kps.BWLTI.y) / (kps.SWLRT.x - kps.BWLTI.x)));
+    console.log('backWindowAngle: ', backWindowAngle);
 
     return {
         width: walipini.length + walipini.wall.thickness * 2,
@@ -358,7 +535,7 @@ const backWindow = (walipini, wsElevation) => {
 
         translate: {
             x: -(walipini.width / 2 + walipini.wall.thickness) + bwp / 2,
-            y: roofHeight(walipini) - (bwh * Math.sin(toRad(wsElevation)) /2),
+            y: roofHeight(walipini) - bwh * Math.sin(toRad(wsElevation)) / 2,
             z: 0
         },
 
@@ -367,103 +544,116 @@ const backWindow = (walipini, wsElevation) => {
             y: toRad(90),
             z: 0
         }
-    }
-}
+    };
+};
 
-const frontWindowProjection = (walipini, wsElevation) =>
-    frontWindowHeight(walipini, wsElevation) * Math.sin(toRad(wsElevation))
+var frontWindowProjection = function frontWindowProjection(walipini, wsElevation) {
+    return frontWindowHeight(walipini, wsElevation) * Math.sin(toRad(wsElevation));
+};
 
-const frontWindowHeight = (walipini, wsElevation) =>
-    (roofHeight(walipini) - walipini.wall.frontHeight) / Math.cos(wsElevation)
+var frontWindowHeight = function frontWindowHeight(walipini, wsElevation) {
+    return (roofHeight(walipini) - walipini.wall.frontHeight) / Math.cos(wsElevation);
+};
 
-const roofHeight = (walipini) => walipini.height - walipini.dig.depth
+var roofHeight = function roofHeight(walipini) {
+    return walipini.height - walipini.dig.depth;
+};
 
-const numBeams = (walipini) =>
-    Math.ceil((walipini.length + walipini.wall.thickness * 2) / walipini.roof.beam.maxDistance + 1)
+var numBeams = function numBeams(walipini) {
+    return Math.ceil((walipini.length + walipini.wall.thickness * 2) / walipini.roof.beam.maxDistance + 1);
+};
 
 module.exports = {
     update: update
-}
+};
 
-},{"three":9}],5:[function(require,module,exports){
-const geometry = require('./geometry')
-const walls = require('./walls')
+},{"three":12}],8:[function(require,module,exports){
+'use strict';
 
-const make = (options) => ({
-    volumes: volumes(options),
-    surfaces: surfaces(options)
+var geometry = require('./geometry');
+var walls = require('./walls');
 
-})
+var make = function make(options) {
+    return {
+        volumes: volumes(options),
+        surfaces: surfaces(options)
 
-const volumes = (options) => {
-    const dig = digVolumes(options)
-    const walls = wallsVolumes(options)
+    };
+};
+
+var volumes = function volumes(options) {
+    var dig = digVolumes(options);
+    var walls = wallsVolumes(options);
     return {
         dig: dig,
         walls: walls,
         totals: dig.totals + walls.totals
-    }
-}
+    };
+};
 
-const soilVolume = (options) => {
-    const soilThickness = options.ground.soil.thickness
-    const totalDepth = options.walipini.dig.depth
-    let digToSoil = soilThickness
+var soilVolume = function soilVolume(options) {
+    var soilThickness = options.ground.soil.thickness;
+    var totalDepth = options.walipini.dig.depth;
+    var digToSoil = soilThickness;
 
     if (totalDepth < soilThickness) {
-        digToSoil = soilThickness - totalDepth
+        digToSoil = soilThickness - totalDepth;
     }
 
-    return walipiniArea(options) * digToSoil
-}
+    return walipiniArea(options) * digToSoil;
+};
 
-const underSoilVolume = (options) => {
-    const soilThickness = options.ground.soil.thickness
-    const totalDepth = options.walipini.dig.depth
-    const digToUnderSoil = Math.max(totalDepth - soilThickness, 0)
+var underSoilVolume = function underSoilVolume(options) {
+    var soilThickness = options.ground.soil.thickness;
+    var totalDepth = options.walipini.dig.depth;
+    var digToUnderSoil = Math.max(totalDepth - soilThickness, 0);
 
-    return walipiniArea(options) * digToUnderSoil
-}
+    return walipiniArea(options) * digToUnderSoil;
+};
 
-const staircaseVolume = (options) => options.walipini.door.width * Math.pow(options.walipini.dig.depth, 2)
-const walipiniArea = (options) => options.walipini.width * options.walipini.length
+var staircaseVolume = function staircaseVolume(options) {
+    return options.walipini.door.width * Math.pow(options.walipini.dig.depth, 2);
+};
+var walipiniArea = function walipiniArea(options) {
+    return options.walipini.width * options.walipini.length;
+};
 
-const digVolumes = (options) => {
-    const soil = soilVolume(options)
-    const underSoil = underSoilVolume(options)
-    const staircase = staircaseVolume(options)
+var digVolumes = function digVolumes(options) {
+    var soil = soilVolume(options);
+    var underSoil = underSoilVolume(options);
+    var staircase = staircaseVolume(options);
     return {
         soil: soil,
         underSoil: underSoil,
         staircase: staircase,
         totals: soil + underSoil + staircase
-    }
-}
+    };
+};
 
-const wallsVolumes = (options) => {
-    const front = geometry.volume(walls.createFrontWallGeometry(options))
-    const back = geometry.volume(walls.createBackWallGeometry(options))
-    const sides = geometry.volume(walls.createSideWallGeometry(options)) * 2
+var wallsVolumes = function wallsVolumes(options) {
+    var front = geometry.volume(walls.createFrontWallGeometry(options));
+    var back = geometry.volume(walls.createBackWallGeometry(options));
+    var sides = geometry.volume(walls.createSideWallGeometry(options)) * 2;
     return {
         front: front,
         back: back,
         sides: sides,
         totals: front + back + sides
-    }
-}
+    };
+};
 
-const surfaces = (options) => {
-    const walipini = options.walipini
-    const wallThickness = walipini.wall.thickness
-    const frontWindow = options.walipini.roof.frontWindow
-    const backWindow = options.walipini.roof.backWindow
-    const frontWindowSurface = frontWindow.width * frontWindow.length
-    const backWindowSurface = backWindow.width * backWindow.length
-    const sideWallsArea = (walipini.width + 2 * wallThickness) * wallThickness * 2
-    const mainWallsArea = walipini.length * wallThickness * 2
-    const walls = sideWallsArea + mainWallsArea
+var surfaces = function surfaces(options) {
+    var walipini = options.walipini;
+    var wallThickness = walipini.wall.thickness;
+    var frontWindow = options.walipini.roof.frontWindow;
+    var backWindow = options.walipini.roof.backWindow;
+    var frontWindowSurface = frontWindow.width * frontWindow.length;
+    var backWindowSurface = backWindow.width * backWindow.length;
+    var sideWallsArea = (walipini.width + 2 * wallThickness) * wallThickness * 2;
+    var mainWallsArea = walipini.length * wallThickness * 2;
+    var walls = sideWallsArea + mainWallsArea;
 
-    console.log(frontWindow, backWindow)
+    console.log(frontWindow, backWindow);
     return {
         roof: {
             frontWindow: frontWindowSurface,
@@ -475,220 +665,222 @@ const surfaces = (options) => {
             walls: walls,
             totals: walipiniArea(options) + walls
         }
-    }
-}
+    };
+};
 
 module.exports = {
     make: make
-}
+};
 
-},{"./geometry":1,"./walls":7}],6:[function(require,module,exports){
-const THREE = require('three')
-const extrude = require('./geometry').extrude
+},{"./geometry":4,"./walls":10}],9:[function(require,module,exports){
+'use strict';
 
-const create = (options) => {
-    const result = new THREE.Object3D()
+var THREE = require('three');
+var extrude = require('./geometry').extrude;
 
-    result.add(createFrontWindow(options))
-    result.add(createBackWindow(options))
-    result.add(createBeams(options))
-    result.rotateY(THREE.Math.degToRad(- options.walipini.orientation))
+var create = function create(options) {
+    var result = new THREE.Object3D();
 
-    return result
-}
+    result.add(createFrontWindow(options));
+    result.add(createBackWindow(options));
+    result.add(createBeams(options));
+    result.rotateY(THREE.Math.degToRad(-options.walipini.orientation));
+
+    return result;
+};
 
 /**
   * Create the front window    
   */
-const createFrontWindow = (options) => {
-    const kps = options.walipini.kps
-    const roof = options.walipini.roof
-    const wallThickness = options.walipini.wall.thickness
-    const vertices = [kps.FWLTM, kps.FWLTE, kps.RTOP, kps.SWLRT, kps.FWLTM]
-    const length = options.walipini.length + wallThickness * 2
+var createFrontWindow = function createFrontWindow(options) {
+    var kps = options.walipini.kps;
+    var roof = options.walipini.roof;
+    var wallThickness = options.walipini.wall.thickness;
+    var vertices = [kps.FWLTM, kps.FWLTE, kps.RTOP, kps.SWLRT, kps.FWLTM];
+    var length = options.walipini.length + wallThickness * 2;
 
-    const windowGeometry = extrude(vertices, length)
-    windowGeometry.translate(0, 0, - length / 2)
-    let frontWindow = new THREE.Mesh(windowGeometry)
+    var windowGeometry = extrude(vertices, length);
+    windowGeometry.translate(0, 0, -length / 2);
+    var frontWindow = new THREE.Mesh(windowGeometry);
 
     frontWindow.material = new THREE.MeshLambertMaterial({
         color: roof.frontWindow.color,
         transparent: roof.frontWindow.transparent,
         opacity: roof.frontWindow.opacity
-    })
-    frontWindow.castShadow = roof.frontWindow.castShadow
+    });
+    frontWindow.castShadow = roof.frontWindow.castShadow;
 
-    return frontWindow
-}
+    return frontWindow;
+};
 
 /**
   * Create the back window
   */
-const createBackWindow = (options) => {
-    const kps = options.walipini.kps
-    const roof = options.walipini.roof
-    const wallThickness = options.walipini.wall.thickness
-    const vertices = [kps.BWLTE, kps.SWLRT, kps.RTOP, kps.BWBT, kps.BWLTE]
-    const length = options.walipini.length + wallThickness * 2
+var createBackWindow = function createBackWindow(options) {
+    var kps = options.walipini.kps;
+    var roof = options.walipini.roof;
+    var wallThickness = options.walipini.wall.thickness;
+    var vertices = [kps.BWLTE, kps.SWLRT, kps.RTOP, kps.BWBT, kps.BWLTE];
+    var length = options.walipini.length + wallThickness * 2;
 
-    const backWindowGeometry = extrude(vertices, length)
-    backWindowGeometry.translate(0, 0, - length / 2)
-    let backWindow = new THREE.Mesh(backWindowGeometry)
+    var backWindowGeometry = extrude(vertices, length);
+    backWindowGeometry.translate(0, 0, -length / 2);
+    var backWindow = new THREE.Mesh(backWindowGeometry);
 
     backWindow.material = new THREE.MeshLambertMaterial({
         color: roof.backWindow.color,
         transparent: roof.backWindow.transparent,
         opacity: roof.backWindow.opacity
-    })
-    backWindow.castShadow = roof.backWindow.castShadow
+    });
+    backWindow.castShadow = roof.backWindow.castShadow;
 
-    return backWindow
-}
+    return backWindow;
+};
 
-const createBeams = (options) => {
-    const roof = options.walipini.roof
-    const fullLength = roof.frontWindow.width
-    const beamdistance = fullLength / roof.beam.numBeams
-    const allBeams = new THREE.Object3D()
-    const trans = - fullLength / 2
-    const fullBeam = createFullBeam(options)
+var createBeams = function createBeams(options) {
+    var roof = options.walipini.roof;
+    var fullLength = roof.frontWindow.width;
+    var beamdistance = fullLength / roof.beam.numBeams;
+    var allBeams = new THREE.Object3D();
+    var trans = -fullLength / 2;
+    var fullBeam = createFullBeam(options);
 
-    for(var b = 0; b <= roof.beam.numBeams; b++) {
-        let clone = fullBeam.clone(true)
-        clone.translateZ(trans + b * beamdistance)
-        allBeams.add(clone)
+    for (var b = 0; b <= roof.beam.numBeams; b++) {
+        var clone = fullBeam.clone(true);
+        clone.translateZ(trans + b * beamdistance);
+        allBeams.add(clone);
     }
 
-    return allBeams
-}
+    return allBeams;
+};
 
-const createFullBeam = (options) => {
-    const fullBeam = new THREE.Object3D()
+var createFullBeam = function createFullBeam(options) {
+    var fullBeam = new THREE.Object3D();
 
-    fullBeam.add(createFrontBeam(options))
-    fullBeam.add(createBackBeam(options))
+    fullBeam.add(createFrontBeam(options));
+    fullBeam.add(createBackBeam(options));
 
-    return fullBeam
-}
+    return fullBeam;
+};
 
-const createFrontBeam = (options) => {
-    const kps = options.walipini.kps
-    const roof = options.walipini.roof
-    const beamWidth = roof.beam.width
-    const vertices = [kps.BWLTE, kps.SWLRT, kps.RTOP, kps.BWBT, kps.BWLTE]
+var createFrontBeam = function createFrontBeam(options) {
+    var kps = options.walipini.kps;
+    var roof = options.walipini.roof;
+    var beamWidth = roof.beam.width;
+    var vertices = [kps.BWLTE, kps.SWLRT, kps.RTOP, kps.BWBT, kps.BWLTE];
 
-    const frontBeamGeometry = extrude(vertices, beamWidth)
-    let frontBeam = new THREE.Mesh(frontBeamGeometry)
+    var frontBeamGeometry = extrude(vertices, beamWidth);
+    var frontBeam = new THREE.Mesh(frontBeamGeometry);
 
     frontBeam.material = new THREE.MeshLambertMaterial({
         color: 'brown',
         transparent: false
-    })
-    frontBeam.castShadow = true
+    });
+    frontBeam.castShadow = true;
 
-    return frontBeam
-}
+    return frontBeam;
+};
 
-const createBackBeam = (options) => {
-    const kps = options.walipini.kps
-    const roof = options.walipini.roof
-    const beamWidth = roof.beam.width
-    const vertices = [kps.FWLTM, kps.FWLTE, kps.RTOP, kps.SWLRT, kps.FWLTM]
+var createBackBeam = function createBackBeam(options) {
+    var kps = options.walipini.kps;
+    var roof = options.walipini.roof;
+    var beamWidth = roof.beam.width;
+    var vertices = [kps.FWLTM, kps.FWLTE, kps.RTOP, kps.SWLRT, kps.FWLTM];
 
-    const backBeamGeometry = extrude(vertices, beamWidth)
-    let backBeam = new THREE.Mesh(backBeamGeometry)
+    var backBeamGeometry = extrude(vertices, beamWidth);
+    var backBeam = new THREE.Mesh(backBeamGeometry);
 
     backBeam.material = new THREE.MeshLambertMaterial({
         color: 'brown',
         transparent: false
-    })
-    backBeam.castShadow = true
+    });
+    backBeam.castShadow = true;
 
-    return backBeam
-}
+    return backBeam;
+};
 
 module.exports = {
     create: create
-}
+};
 
-},{"./geometry":1,"three":9}],7:[function(require,module,exports){
-const THREE = require('three')
-const extrude = require('./geometry').extrude
+},{"./geometry":4,"three":12}],10:[function(require,module,exports){
+'use strict';
 
-const createWall = (geometry, tx, ty, tz) => {
-    geometry.translate(tx, ty, tz)
+var THREE = require('three');
+var extrude = require('./geometry').extrude;
 
-    var wall = new THREE.Mesh(geometry)
+var createWall = function createWall(geometry, tx, ty, tz) {
+    geometry.translate(tx, ty, tz);
 
-    wall.material =  new THREE.MeshLambertMaterial({
+    var wall = new THREE.Mesh(geometry);
+
+    wall.material = new THREE.MeshLambertMaterial({
         color: wall.color,
         transparent: false,
         opacity: 0.6
-    })
-    wall.castShadow = true
-    return wall
-}
+    });
+    wall.castShadow = true;
+    wall.receiveShadow = true;
+    return wall;
+};
 
-const create = (options) => {
+var create = function create(options) {
 
-    const wallThickness = options.walipini.wall.thickness
-    const length = options.walipini.length + wallThickness * 2
-    const sideWallDistLeft = -length / 2
-    const sideWallDistRight = length / 2 - wallThickness
+    var wallThickness = options.walipini.wall.thickness;
+    var length = options.walipini.length + wallThickness * 2;
+    var sideWallDistLeft = -length / 2;
+    var sideWallDistRight = length / 2 - wallThickness;
 
-    const frontWall = createWall(createFrontWallGeometry(options), 0, 0, -length / 2)
-    const backWall = createWall(createBackWallGeometry(options), 0, 0, -length / 2)
-    const sideWallLeft = createWall(createSideWallGeometry(options), 0, 0, sideWallDistLeft)
-    const sideWallRight = createWall(createSideWallGeometry(options), 0, 0, sideWallDistRight)
+    var frontWall = createWall(createFrontWallGeometry(options), 0, 0, -length / 2);
+    var backWall = createWall(createBackWallGeometry(options), 0, 0, -length / 2);
+    var sideWallLeft = createWall(createSideWallGeometry(options), 0, 0, sideWallDistLeft);
+    var sideWallRight = createWall(createSideWallGeometry(options), 0, 0, sideWallDistRight);
 
-    const result = new THREE.Object3D()
+    var result = new THREE.Object3D();
 
-    result.add(frontWall)
-    result.add(backWall)
-    result.add(sideWallLeft)
-    result.add(sideWallRight)
-    result.rotateY(THREE.Math.degToRad(- options.walipini.orientation))
+    result.add(frontWall);
+    result.add(backWall);
+    result.add(sideWallLeft);
+    result.add(sideWallRight);
+    result.rotateY(THREE.Math.degToRad(-options.walipini.orientation));
 
-    return result
-}
+    return result;
+};
 
-const createFrontWallGeometry = (options) => {
-    const kps = options.walipini.kps
-    const wallThickness = options.walipini.wall.thickness
-    const vertices = [kps.FWLBI, kps.FWLTI, kps.FWLTM, kps.FWLTE, kps.FWLBE, kps.FWLBI]
-    const length = options.walipini.length + wallThickness * 2
+var createFrontWallGeometry = function createFrontWallGeometry(options) {
+    var kps = options.walipini.kps;
+    var wallThickness = options.walipini.wall.thickness;
+    var vertices = [kps.FWLBI, kps.FWLTI, kps.FWLTM, kps.FWLTE, kps.FWLBE, kps.FWLBI];
+    var length = options.walipini.length + wallThickness * 2;
 
-    return extrude(vertices, length)
-}
+    return extrude(vertices, length);
+};
 
-const createBackWallGeometry = (options) => {
-    const kps = options.walipini.kps
-    const wallThickness = options.walipini.wall.thickness
-    const vertices = [kps.BWLBE, kps.BWLTE, kps.BWLTI, kps.BWLBI, kps.BWLBE]
-    const length = options.walipini.length + wallThickness * 2
+var createBackWallGeometry = function createBackWallGeometry(options) {
+    var kps = options.walipini.kps;
+    var wallThickness = options.walipini.wall.thickness;
+    var vertices = [kps.BWLBE, kps.BWLTE, kps.BWLTI, kps.BWLBI, kps.BWLBE];
+    var length = options.walipini.length + wallThickness * 2;
 
-    return extrude(vertices, length)
-}
+    return extrude(vertices, length);
+};
 
-const createSideWallGeometry = (options) => {
-    const kps = options.walipini.kps
-    const wallThickness = options.walipini.wall.thickness
-    const vertices = [
-        kps.BWLBE, kps.BWLTE, kps.SWLRT, kps.FWLTM, kps.FWLTE,
-        kps.FWLBE, kps.SWLBF, kps.SWLDF, kps.SWLDB, kps.SWLBB, kps.BWLBE
-    ]
+var createSideWallGeometry = function createSideWallGeometry(options) {
+    var kps = options.walipini.kps;
+    var wallThickness = options.walipini.wall.thickness;
+    var vertices = [kps.BWLBE, kps.BWLTE, kps.SWLRT, kps.FWLTM, kps.FWLTE, kps.FWLBE, kps.SWLBF, kps.SWLDF, kps.SWLDB, kps.SWLBB, kps.BWLBE];
 
-    return extrude(vertices, wallThickness)
-}
+    return extrude(vertices, wallThickness);
+};
 
 module.exports = {
     create: create,
     createFrontWallGeometry: createFrontWallGeometry,
     createBackWallGeometry: createBackWallGeometry,
     createSideWallGeometry: createSideWallGeometry
-}
+};
 
-},{"./geometry":1,"three":9}],8:[function(require,module,exports){
+},{"./geometry":4,"three":12}],11:[function(require,module,exports){
 'use strict';
 	
 	var ThreeBSP,
@@ -1241,7 +1433,7 @@ module.exports = {
     
     return ThreeBSP;
   }
-},{}],9:[function(require,module,exports){
+},{}],12:[function(require,module,exports){
 (function (global, factory) {
 	typeof exports === 'object' && typeof module !== 'undefined' ? factory(exports) :
 	typeof define === 'function' && define.amd ? define(['exports'], factory) :
@@ -45482,7 +45674,7 @@ module.exports = {
 
 })));
 
-},{}],10:[function(require,module,exports){
+},{}],13:[function(require,module,exports){
 const domready = require('domready')
 
 domready(() => {
@@ -45490,7 +45682,7 @@ domready(() => {
     require('./threejs').main()
 });
 
-},{"./threejs":11,"domready":13}],11:[function(require,module,exports){
+},{"./threejs":14,"domready":16}],14:[function(require,module,exports){
 var THREE = require('three')
 var OrbitControls = require('three-orbit-controls')(THREE)
 const world = require('./world')
@@ -45573,7 +45765,7 @@ module.exports = {
     main: main
 }
 
-},{"./world":12,"three":15,"three-orbit-controls":14}],12:[function(require,module,exports){
+},{"./world":15,"three":18,"three-orbit-controls":17}],15:[function(require,module,exports){
 const THREE = require('three')
 const walipini = require('walipini-model-3d')
 
@@ -45635,64 +45827,8 @@ var drawCube = function(x, y, z, width, height, length, color, scene) {
 */
 
 const create = function(scene) {
-    const walipiniOptions = {
-        winterSolsticeElevation: 18.65,
-        ground: {
-            width: 20,
-            length: 20,
-            grass: {
-                thickness: 0.05,
-                color: 'green'
-            },
-            soil: {
-                thickness: 0.4,
-                color: 'brown'
-            },
-            underSoil: {
-                thickness: 4,
-                color: 'yellow'
-            }
-        },
-        walipini: {
-            width: 3,
-            length: 10,
-            dig: {
-                depth: 0.75
-            },
-            orientation: 30,
-            wall: {
-                thickness: 0.5,
-                frontHeight: 0.75,
-                backHeight: 1.25,
-                color: 'gray'
-            },
-            roof: {
-                topDistance: 1.5,
-                beam: {
-                    maxDistance: 0.8,
-                    width: 0.05,
-                    height: 0.1
-                },
-                frontWindow: {
-                    color: 'white',
-                    transparent: true,
-                    opacity: 0.4,
-                    castShadow: false
-                },
-                backWindow: {
-                    color: 'brown',
-                    transparent: false,
-                    opacity: 0.4,
-                    castShadow: true
-                }
-            },
-            door: {
-                width: 0.8,
-                height: 1.8,
-            }
-        }
-    }
-
+    const walipiniOptions = walipini.config.defaults
+    console.log('ranges: ', walipini.config.ranges)
     addLights(scene)
     scene.add(walipini.create(walipiniOptions))
 
@@ -45704,7 +45840,7 @@ module.exports = {
     create: create
 }
 
-},{"three":15,"walipini-model-3d":3}],13:[function(require,module,exports){
+},{"three":18,"walipini-model-3d":6}],16:[function(require,module,exports){
 /*!
   * domready (c) Dustin Diaz 2014 - License MIT
   */
@@ -45736,7 +45872,7 @@ module.exports = {
 
 });
 
-},{}],14:[function(require,module,exports){
+},{}],17:[function(require,module,exports){
 module.exports = function( THREE ) {
 	/**
 	 * @author qiao / https://github.com/qiao
@@ -46758,6 +46894,6 @@ module.exports = function( THREE ) {
 	return OrbitControls;
 };
 
-},{}],15:[function(require,module,exports){
-arguments[4][9][0].apply(exports,arguments)
-},{"dup":9}]},{},[10]);
+},{}],18:[function(require,module,exports){
+arguments[4][12][0].apply(exports,arguments)
+},{"dup":12}]},{},[13]);
