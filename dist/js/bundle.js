@@ -10,15 +10,15 @@ module.exports={
         },
         "soil": {
             "thickness": 0.4,
-            "color": "brown"
+            "color": "saddlebrown"
         },
         "underSoil": {
             "thickness": 4,
-            "color": "yellow"
+            "color": "sandybrown"
         }
     },
     "walipini": {
-        "orientation": 10,
+        "orientation": 0,
         "width": 3,
         "length": 10,
         "dig": {
@@ -28,7 +28,7 @@ module.exports={
             "thickness": 0.5,
             "frontHeight": 0.75,
             "backHeight": 1.25,
-            "color": "gray"
+            "color": "tan"
         },
         "roof": {
             "topDistance": 1.5,
@@ -38,7 +38,7 @@ module.exports={
                 "height": 0.1
             },
             "frontWindow": {
-                "color": "white",
+                "color": "skyblue",
                 "transparent": true,
                 "opacity": 0.4,
                 "castShadow": false
@@ -52,7 +52,11 @@ module.exports={
         },
         "door": {
             "width": 0.8,
-            "height": 1.8
+            "height": 1.8,
+            "thickness": 0.05,
+            "lintelThickness": 0.12,
+            "frameThickness": 0.05,
+            "color": "brown"
         }
     }
 }
@@ -71,99 +75,99 @@ module.exports = {
 },{"./defaults.json":1,"./ranges.json":3}],3:[function(require,module,exports){
 module.exports={
     "winterSolsticeElevation": {
-        "from": 0,
-        "to:": 90,
+        "min": 0,
+        "max": 90,
         "step": 1
     },
     "ground": {
         "grass": {
             "thickness": {
-                "from": 0.01,
-                "to:": 0.05,
+                "min": 0.01,
+                "max": 0.05,
                 "step": 0.01
             }
         },
         "soil": {
             "thickness": {
-                "from": 0,
-                "to:": 1,
+                "min": 0,
+                "max": 1,
                 "step": 0.01 
             }
         }
     },
     "walipini": {
         "orientation": {
-                "from": 0,
-                "to:": 90,
+                "min": -90,
+                "max": 90,
                 "step": 1
             },
         "width": {
-                "from": 2.5,
-                "to:": 6,
+                "min": 2.5,
+                "max": 6,
                 "step": 0.1
             },
         "length": {
-                "from": 15,
-                "to:": 3,
+                "min": 3,
+                "max": 15,
                 "step": 0.1
             },
         "dig": {
             "depth": {
-                "from": 0,
-                "to:": 3,
+                "min": 0,
+                "max": 3,
                 "step": 0.1
             }
         },
         "wall": {
             "thickness": {
-                "from": 0.2,
-                "to:": 1,
+                "min": 0.2,
+                "max": 1,
                 "step": 0.01
             },
             "frontHeight": {
-                "from": 0,
-                "to:": 1.5,
+                "min": 0,
+                "max": 1.5,
                 "step": 0.01
             },
             "backHeight": {
-                "from": 0,
-                "to:": 3,
+                "min": 0,
+                "max": 3,
                 "step": 0.01
             }
         },
         "roof": {
             "topDistance": {
-                "from": 1,
-                "to:": 3,
+                "min": 1,
+                "max": 3,
                 "step": 0.01
             },
             "beam": {
                 "maxDistance": {
-                    "from": 0.6,
-                    "to:": 1,
+                    "min": 0.6,
+                    "max": 1,
                     "step": 0.01
                 },
                 "width": {
-                    "from": 0.05,
-                    "to:": 0.15,
+                    "min": 0.05,
+                    "max": 0.15,
                     "step": 0.01
                 },
                 "height": {
-                    "from": 0.075,
-                    "to:": 0.25,
+                    "min": 0.075,
+                    "max": 0.25,
                     "step": 0.01
                 }
             }
         },
         "door": {
             "width": {
-                "from": 0.6,
-                "to:": 1.2,
+                "min": 0.6,
+                "max": 1.2,
                 "step": 0.01
             },
             "height": {
-                "from": 1.5,
-                "to:": 2.5,
+                "min": 1.5,
+                "max": 2.5,
                 "step": 0.01
             }
         }
@@ -171,6 +175,122 @@ module.exports={
 }
 
 },{}],4:[function(require,module,exports){
+'use strict';
+
+var THREE = require('three');
+var extrude = require('./geometry').extrude;
+
+var create = function create(options) {
+
+    var doorDist = (options.walipini.length + options.walipini.door.thickness) / 2;
+    var doorFrameDist = options.walipini.length / 2;
+    var lintelDist = (options.walipini.length + options.walipini.wall.thickness) / 2;
+
+    var result = new THREE.Object3D();
+
+    // Add left and right doors
+    var leftDoor = createDoor(options);
+    var rightDoor = leftDoor.clone(true);
+    leftDoor.translateZ(-doorDist);
+    rightDoor.translateZ(doorDist);
+
+    result.add(leftDoor);
+    result.add(rightDoor);
+
+    // Add doorframe
+    var leftDoorFrame = createDoorFrame(options);
+    var rightDoorFrame = leftDoorFrame.clone(true);
+
+    leftDoorFrame.translateZ(-doorFrameDist - options.walipini.wall.thickness - 0.01);
+    rightDoorFrame.translateZ(doorFrameDist + 0.01);
+
+    result.add(leftDoorFrame);
+    result.add(rightDoorFrame);
+
+    // Add lintel
+    var leftLintel = createLintel(options);
+    var rightLintel = leftLintel.clone(true);
+
+    leftLintel.translateZ(-lintelDist);
+    rightLintel.translateZ(lintelDist);
+
+    result.add(leftLintel);
+    result.add(rightLintel);
+
+    result.rotateY(THREE.Math.degToRad(-options.walipini.orientation));
+
+    return result;
+};
+
+var createDoor = function createDoor(options) {
+    var door = options.walipini.door;
+    var doorMesh = new THREE.Mesh(new THREE.BoxGeometry(door.width, door.height, door.thickness));
+    doorMesh.translateY(options.walipini.door.height / 2 - options.walipini.dig.depth);
+    doorMesh.receiveShadow = true;
+    doorMesh.castShadow = true;
+    doorMesh.material = new THREE.MeshLambertMaterial({
+        opacity: 0.6,
+        transparent: false,
+        color: door.color
+    });
+    return doorMesh;
+};
+
+var createDoorFrame = function createDoorFrame(options) {
+    var door = options.walipini.door;
+    var doorWidth = door.width;
+    var frameThickness = door.frameThickness;
+    var doorTop = door.height - options.walipini.dig.depth;
+    var extDoorBottom = -(options.walipini.dig.depth + frameThickness);
+    var intDoorBottom = -(options.walipini.dig.depth - 0.01);
+    var extDist = doorWidth / 2 + frameThickness;
+    var intDist = doorWidth / 2 - 0.01;
+    var length = options.walipini.wall.thickness + 0.02;
+
+    var LBE = new THREE.Vector2(-extDist, extDoorBottom);
+    var RBE = new THREE.Vector2(extDist, extDoorBottom);
+    var LTE = new THREE.Vector2(-extDist, doorTop);
+    var RTE = new THREE.Vector2(extDist, doorTop);
+    var LBI = new THREE.Vector2(-intDist, intDoorBottom);
+    var RBI = new THREE.Vector2(intDist, intDoorBottom);
+    var LTI = new THREE.Vector2(-intDist, doorTop);
+    var RTI = new THREE.Vector2(intDist, doorTop);
+
+    var vertices = [LBE, RBE, RTE, RTI, RBI, LBI, LTI, LTE, LBE];
+
+    var doorFrameMesh = new THREE.Mesh(extrude(vertices, length));
+
+    doorFrameMesh.receiveShadow = true;
+    doorFrameMesh.castShadow = true;
+    doorFrameMesh.material = new THREE.MeshLambertMaterial({
+        opacity: 0.6,
+        transparent: false,
+        color: "sienna"
+    });
+    return doorFrameMesh;
+};
+
+var createLintel = function createLintel(options) {
+    var door = options.walipini.door;
+    var lintelHeight = (options.walipini.door.height + options.walipini.door.lintelThickness) / 2 - 0.005;
+    var lintelMesh = new THREE.Mesh(new THREE.BoxGeometry(door.width + 0.5, door.lintelThickness, options.walipini.wall.thickness + 0.06));
+    lintelMesh.translateY(options.walipini.door.height / 2 - options.walipini.dig.depth);
+    lintelMesh.translateY(lintelHeight);
+    lintelMesh.receiveShadow = true;
+    lintelMesh.castShadow = true;
+    lintelMesh.material = new THREE.MeshLambertMaterial({
+        opacity: 0.6,
+        transparent: false,
+        color: "sienna"
+    });
+    return lintelMesh;
+};
+
+module.exports = {
+    create: create
+};
+
+},{"./geometry":5,"three":13}],5:[function(require,module,exports){
 'use strict';
 
 var THREE = require('three');
@@ -222,88 +342,14 @@ var extrude = function extrude(vertices, height) {
 module.exports = {
     volume: calculateVolume,
     extrude: extrude
-
-    /*
-    function customRound(number, fractiondigits) {
-        with(Math) {
-            return round(number * pow(10, fractiondigits)) / pow(10, fractiondigits);
-        }
-    }
-    
-    function SuperficialAreaOfMesh(points) {
-    
-        var _len = points.length,
-            _area = 0.0;
-    
-        if (!_len) return 0.0;
-    
-        let i = 0
-        let vols = 0
-        let va
-        let vb
-        let vc
-    
-        do  {
-            va = {
-                X: points[i],
-                Y: points[i + 1],
-                Z: points[i + 2]
-            }
-    
-            vb = {
-                X: points[i + 3],
-                Y: points[i + 4],
-                Z: points[i + 5]
-            }
-    
-            vc = {
-                X: points[i + 6],
-                Y: points[i + 7],
-                Z: points[i + 8]
-            }
-    
-            var ab = {
-                X: vb.X - va.X,
-                Y: vb.Y - va.Y,
-                Z: vb.Z - va.Z
-            }
-            //vb.clone().sub(va);  var ac = {X:vc.X-va.X,Y:vc.Y-va.Y,Z:va.Z-vc.Z};
-            //vc.clone().sub(va);   var cross = new THREE.Vector3();
-    
-            cross = crossVectors(ab, ac)
-            _area += Math.sqrt(Math.pow(cross.X, 2) + Math.pow(cross.Y, 2) + Math.pow(cross.Z, 2)) / 2
-            i += 9
-        }
-        while (i < points.length)
-    
-        return customRound(Math.abs(_area) / 100, 2)
-    }
-    
-    function crossVectors( a, b ) {
-        var ax = a.X
-        var ay = a.Y
-        var az = a.Z
-        var bx = b.X
-        var by = b.Y
-        var bz = b.Z
-        var P = {
-            X: ay * bz - az * by,
-            Y: az * bx - ax * bz,
-            Z: ax * by - ay * bx
-        }
-    
-       return P;
-    }
-    
-    */
-
 };
 
-},{"three":12}],5:[function(require,module,exports){
+},{"three":13}],6:[function(require,module,exports){
 'use strict';
 
 var THREE = require('three');
 var ThreeBSP = require('three-js-csg')(THREE);
+var extrude = require('./geometry').extrude;
 
 var create = function create(options) {
     var ground = options.ground;
@@ -312,17 +358,22 @@ var create = function create(options) {
     var underSoil = ground.underSoil;
     var walipini = options.walipini;
 
+    var stairwayDigBSP = new ThreeBSP(createStairwayDig(options));
+
     // Create Walipini Dig
     var walipiniDig = new THREE.Mesh(new THREE.BoxGeometry(walipini.width, walipini.height, walipini.length));
     walipiniDig.position.set(0, walipini.height / 2 - walipini.dig.depth, 0);
     walipiniDig.rotateY(THREE.Math.degToRad(-options.walipini.orientation));
-    var walipiniDigBSP = new ThreeBSP(walipiniDig);
+    var walipiniDigBSP = stairwayDigBSP.union(new ThreeBSP(walipiniDig));
 
     // Create Grass
     var grassVol = new THREE.Mesh(new THREE.BoxGeometry(ground.width, grass.thickness, ground.length));
     grassVol.position.set(0, -grass.thickness / 2, 0);
     var grassVolBSP = new ThreeBSP(grassVol);
     var grassWithDig = grassVolBSP.subtract(walipiniDigBSP).toMesh();
+
+    //var grassTexture = THREE.ImageUtils.loadTexture("./textures/grass.jpg")
+    //grassWithDig.material =  new THREE.MeshLambertMaterial({ color: grass.color, map: grassTexture })
     grassWithDig.material = new THREE.MeshLambertMaterial({ color: grass.color });
     grassWithDig.receiveShadow = true;
     grassWithDig.castShadow = true;
@@ -357,16 +408,35 @@ var create = function create(options) {
     return result;
 };
 
+var createStairwayDig = function createStairwayDig(options) {
+    var lowerWidth = options.walipini.length + options.walipini.wall.thickness * 2;
+    var upperWidth = lowerWidth + options.walipini.dig.depth * 2;
+    var UL = new THREE.Vector2(-upperWidth / 2, 0.01);
+    var UR = new THREE.Vector2(upperWidth / 2, 0.01);
+    var LL = new THREE.Vector2(-lowerWidth / 2, -options.walipini.dig.depth);
+    var LR = new THREE.Vector2(lowerWidth / 2, -options.walipini.dig.depth);
+    var vertices = [UL, UR, LR, LL, UL];
+    console.log('stairwayDig: ', vertices);
+    var length = options.walipini.door.width;
+
+    var stairwayDigGeometry = extrude(vertices, length);
+    stairwayDigGeometry.translate(0, 0, -length / 2);
+    stairwayDigGeometry.rotateY(THREE.Math.degToRad(-options.walipini.orientation - 90));
+
+    return new THREE.Mesh(stairwayDigGeometry);
+};
+
 module.exports = {
     create: create
 };
 
-},{"three":12,"three-js-csg":11}],6:[function(require,module,exports){
+},{"./geometry":5,"three":13,"three-js-csg":12}],7:[function(require,module,exports){
 'use strict';
 
 var THREE = require('three');
 var ground = require('./ground');
 var walls = require('./walls');
+var doors = require('./doors');
 var roof = require('./roof');
 var parameters = require('./parameters');
 var reports = require('./reports');
@@ -378,6 +448,7 @@ var create = function create(rawOptions) {
 
     walipini.add(ground.create(options));
     walipini.add(walls.create(options));
+    walipini.add(doors.create(options));
     walipini.add(roof.create(options));
 
     return walipini;
@@ -394,7 +465,7 @@ module.exports = {
     config: config
 };
 
-},{"../config/":2,"./ground":5,"./parameters":7,"./reports":8,"./roof":9,"./walls":10,"three":12}],7:[function(require,module,exports){
+},{"../config/":2,"./doors":4,"./ground":6,"./parameters":8,"./reports":9,"./roof":10,"./walls":11,"three":13}],8:[function(require,module,exports){
 'use strict';
 
 var THREE = require('three');
@@ -567,7 +638,7 @@ module.exports = {
     update: update
 };
 
-},{"three":12}],8:[function(require,module,exports){
+},{"three":13}],9:[function(require,module,exports){
 'use strict';
 
 var geometry = require('./geometry');
@@ -576,8 +647,8 @@ var walls = require('./walls');
 var make = function make(options) {
     return {
         volumes: volumes(options),
-        surfaces: surfaces(options)
-
+        surfaces: surfaces(options),
+        sizes: sizes(options)
     };
 };
 
@@ -587,7 +658,7 @@ var volumes = function volumes(options) {
     return {
         dig: dig,
         walls: walls,
-        totals: dig.totals + walls.totals
+        balance: (dig.totals - walls.totals).toFixed(1)
     };
 };
 
@@ -623,10 +694,10 @@ var digVolumes = function digVolumes(options) {
     var underSoil = underSoilVolume(options);
     var staircase = staircaseVolume(options);
     return {
-        soil: soil,
-        underSoil: underSoil,
-        staircase: staircase,
-        totals: soil + underSoil + staircase
+        soil: soil.toFixed(1),
+        underSoil: underSoil.toFixed(1),
+        staircase: staircase.toFixed(1),
+        totals: (soil + underSoil + staircase).toFixed(1)
     };
 };
 
@@ -635,10 +706,10 @@ var wallsVolumes = function wallsVolumes(options) {
     var back = geometry.volume(walls.createBackWallGeometry(options));
     var sides = geometry.volume(walls.createSideWallGeometry(options)) * 2;
     return {
-        front: front,
-        back: back,
-        sides: sides,
-        totals: front + back + sides
+        front: front.toFixed(1),
+        back: back.toFixed(1),
+        sides: sides.toFixed(1),
+        totals: (front + back + sides).toFixed(1)
     };
 };
 
@@ -653,17 +724,44 @@ var surfaces = function surfaces(options) {
     var mainWallsArea = walipini.length * wallThickness * 2;
     var walls = sideWallsArea + mainWallsArea;
 
-    console.log(frontWindow, backWindow);
     return {
         roof: {
-            frontWindow: frontWindowSurface,
-            backWindow: backWindowSurface,
-            totals: frontWindowSurface + backWindowSurface
+            frontWindow: frontWindowSurface.toFixed(1),
+            backWindow: backWindowSurface.toFixed(1),
+            totals: (frontWindowSurface + backWindowSurface).toFixed(1)
         },
         building: {
-            internal: walipiniArea(options),
-            walls: walls,
-            totals: walipiniArea(options) + walls
+            internal: walipiniArea(options).toFixed(1),
+            walls: walls.toFixed(1),
+            totals: (walipiniArea(options) + walls).toFixed(1)
+        }
+    };
+};
+
+var sizes = function sizes(options) {
+    var walipini = options.walipini;
+    var wallThickness = walipini.wall.thickness;
+    var frontWindow = options.walipini.roof.frontWindow;
+    var backWindow = options.walipini.roof.backWindow;
+    var fullWidth = walipini.width + wallThickness * 2;
+    var fullLength = walipini.length + wallThickness * 2;
+
+    return {
+        roof: {
+            frontWindowWidth: frontWindow.length.toFixed(1),
+            backWindowWidth: backWindow.length.toFixed(1),
+            totalWidth: (frontWindow.length + backWindow.length).toFixed(1),
+            length: fullLength.toFixed(1) // + overhanging
+        },
+        building: {
+            internal: {
+                width: walipini.width.toFixed(1),
+                length: walipini.length.toFixed(1)
+            },
+            external: {
+                width: fullWidth.toFixed(1),
+                length: fullLength.toFixed(1)
+            }
         }
     };
 };
@@ -672,7 +770,7 @@ module.exports = {
     make: make
 };
 
-},{"./geometry":4,"./walls":10}],9:[function(require,module,exports){
+},{"./geometry":5,"./walls":11}],10:[function(require,module,exports){
 'use strict';
 
 var THREE = require('three');
@@ -739,10 +837,10 @@ var createBackWindow = function createBackWindow(options) {
 
 var createBeams = function createBeams(options) {
     var roof = options.walipini.roof;
-    var fullLength = roof.frontWindow.width;
+    var fullLength = roof.frontWindow.width - roof.beam.width;
     var beamdistance = fullLength / roof.beam.numBeams;
     var allBeams = new THREE.Object3D();
-    var trans = -fullLength / 2;
+    var trans = -(fullLength + roof.beam.width) / 2;
     var fullBeam = createFullBeam(options);
 
     for (var b = 0; b <= roof.beam.numBeams; b++) {
@@ -759,39 +857,22 @@ var createFullBeam = function createFullBeam(options) {
 
     fullBeam.add(createFrontBeam(options));
     fullBeam.add(createBackBeam(options));
+    fullBeam.translateY(-0.005);
 
     return fullBeam;
-};
-
-var createFrontBeam = function createFrontBeam(options) {
-    var kps = options.walipini.kps;
-    var roof = options.walipini.roof;
-    var beamWidth = roof.beam.width;
-    var vertices = [kps.BWLTE, kps.SWLRT, kps.RTOP, kps.BWBT, kps.BWLTE];
-
-    var frontBeamGeometry = extrude(vertices, beamWidth);
-    var frontBeam = new THREE.Mesh(frontBeamGeometry);
-
-    frontBeam.material = new THREE.MeshLambertMaterial({
-        color: 'brown',
-        transparent: false
-    });
-    frontBeam.castShadow = true;
-
-    return frontBeam;
 };
 
 var createBackBeam = function createBackBeam(options) {
     var kps = options.walipini.kps;
     var roof = options.walipini.roof;
     var beamWidth = roof.beam.width;
-    var vertices = [kps.FWLTM, kps.FWLTE, kps.RTOP, kps.SWLRT, kps.FWLTM];
+    var vertices = [kps.BWLTE, kps.SWLRT, kps.RTOP, kps.BWBT, kps.BWLTE];
 
     var backBeamGeometry = extrude(vertices, beamWidth);
     var backBeam = new THREE.Mesh(backBeamGeometry);
 
     backBeam.material = new THREE.MeshLambertMaterial({
-        color: 'brown',
+        color: 'sienna',
         transparent: false
     });
     backBeam.castShadow = true;
@@ -799,26 +880,43 @@ var createBackBeam = function createBackBeam(options) {
     return backBeam;
 };
 
+var createFrontBeam = function createFrontBeam(options) {
+    var kps = options.walipini.kps;
+    var roof = options.walipini.roof;
+    var beamWidth = roof.beam.width;
+    var vertices = [kps.FWLTM, kps.FWLTE, kps.RTOP, kps.SWLRT, kps.FWLTM];
+
+    var frontBeamGeometry = extrude(vertices, beamWidth);
+    var frontBeam = new THREE.Mesh(frontBeamGeometry);
+
+    frontBeam.material = new THREE.MeshLambertMaterial({
+        color: 'sienna',
+        transparent: false
+    });
+    frontBeam.castShadow = true;
+
+    return frontBeam;
+};
+
 module.exports = {
     create: create
 };
 
-},{"./geometry":4,"three":12}],10:[function(require,module,exports){
+},{"./geometry":5,"three":13}],11:[function(require,module,exports){
 'use strict';
 
 var THREE = require('three');
 var extrude = require('./geometry').extrude;
 
-var createWall = function createWall(geometry, tx, ty, tz) {
+var createWall = function createWall(geometry, tx, ty, tz, color) {
     geometry.translate(tx, ty, tz);
 
-    var wall = new THREE.Mesh(geometry);
-
-    wall.material = new THREE.MeshLambertMaterial({
-        color: wall.color,
+    var wall = new THREE.Mesh(geometry, new THREE.MeshLambertMaterial({
+        color: color,
         transparent: false,
         opacity: 0.6
-    });
+    }));
+
     wall.castShadow = true;
     wall.receiveShadow = true;
     return wall;
@@ -831,10 +929,10 @@ var create = function create(options) {
     var sideWallDistLeft = -length / 2;
     var sideWallDistRight = length / 2 - wallThickness;
 
-    var frontWall = createWall(createFrontWallGeometry(options), 0, 0, -length / 2);
-    var backWall = createWall(createBackWallGeometry(options), 0, 0, -length / 2);
-    var sideWallLeft = createWall(createSideWallGeometry(options), 0, 0, sideWallDistLeft);
-    var sideWallRight = createWall(createSideWallGeometry(options), 0, 0, sideWallDistRight);
+    var frontWall = createWall(createFrontWallGeometry(options), 0, 0, -length / 2, options.walipini.wall.color);
+    var backWall = createWall(createBackWallGeometry(options), 0, 0, -length / 2, options.walipini.wall.color);
+    var sideWallLeft = createWall(createSideWallGeometry(options), 0, 0, sideWallDistLeft, options.walipini.wall.color);
+    var sideWallRight = createWall(createSideWallGeometry(options), 0, 0, sideWallDistRight, options.walipini.wall.color);
 
     var result = new THREE.Object3D();
 
@@ -868,7 +966,11 @@ var createBackWallGeometry = function createBackWallGeometry(options) {
 var createSideWallGeometry = function createSideWallGeometry(options) {
     var kps = options.walipini.kps;
     var wallThickness = options.walipini.wall.thickness;
-    var vertices = [kps.BWLBE, kps.BWLTE, kps.SWLRT, kps.FWLTM, kps.FWLTE, kps.FWLBE, kps.SWLBF, kps.SWLDF, kps.SWLDB, kps.SWLBB, kps.BWLBE];
+    //const vertices = [
+    //    kps.BWLBE, kps.BWLTE, kps.SWLRT, kps.FWLTM, kps.FWLTE,
+    //    kps.FWLBE, kps.SWLBF, kps.SWLDF, kps.SWLDB, kps.SWLBB, kps.BWLBE
+    //]
+    var vertices = [kps.BWLBE, kps.SWLBB, kps.SWLDB, kps.SWLDF, kps.SWLBF, kps.FWLBE, kps.FWLTE, kps.FWLTM, kps.SWLRT, kps.BWLTE, kps.BWLBE];
 
     return extrude(vertices, wallThickness);
 };
@@ -880,7 +982,7 @@ module.exports = {
     createSideWallGeometry: createSideWallGeometry
 };
 
-},{"./geometry":4,"three":12}],11:[function(require,module,exports){
+},{"./geometry":5,"three":13}],12:[function(require,module,exports){
 'use strict';
 	
 	var ThreeBSP,
@@ -1433,7 +1535,7 @@ module.exports = {
     
     return ThreeBSP;
   }
-},{}],12:[function(require,module,exports){
+},{}],13:[function(require,module,exports){
 (function (global, factory) {
 	typeof exports === 'object' && typeof module !== 'undefined' ? factory(exports) :
 	typeof define === 'function' && define.amd ? define(['exports'], factory) :
@@ -45674,7 +45776,7 @@ module.exports = {
 
 })));
 
-},{}],13:[function(require,module,exports){
+},{}],14:[function(require,module,exports){
 const domready = require('domready')
 
 domready(() => {
@@ -45682,7 +45784,7 @@ domready(() => {
     require('./threejs').main()
 });
 
-},{"./threejs":14,"domready":16}],14:[function(require,module,exports){
+},{"./threejs":15,"domready":17}],15:[function(require,module,exports){
 var THREE = require('three')
 var OrbitControls = require('three-orbit-controls')(THREE)
 const world = require('./world')
@@ -45729,7 +45831,8 @@ function init() {
     renderer = new THREE.WebGLRenderer();
     renderer.setClearColor(0xf0f0f0, 1.0);
     renderer.setSize(window.innerWidth, window.innerHeight);
-    renderer.shadowMapEnabled = false;
+    renderer.shadowMap.enabled = false;
+    //renderer.shadowMap.type = THREE.PCFSoftShadowMap; // default THREE.PCFShadowMap
 
     // add the output of the renderer to the html element
     document.body.appendChild(renderer.domElement);
@@ -45765,7 +45868,7 @@ module.exports = {
     main: main
 }
 
-},{"./world":15,"three":18,"three-orbit-controls":17}],15:[function(require,module,exports){
+},{"./world":16,"three":19,"three-orbit-controls":18}],16:[function(require,module,exports){
 const THREE = require('three')
 const walipini = require('walipini-model-3d')
 
@@ -45786,25 +45889,40 @@ const addPlane = function(colori, scene) {
 
 var addLights = function(scene) {
     // Set the ambient light
-    var ambientLight = new THREE.AmbientLight(0x111111);
+    var ambientLight = new THREE.AmbientLight(0x777777);
     scene.add(ambientLight);
 
     // add spotlight for the shadows
     var spotLight = new THREE.SpotLight(0xffffff);
-    spotLight.position.set(30, 30, 10);
-    spotLight.shadowCameraNear = 2;
-    spotLight.shadowCameraFar = 50;
+    spotLight.position.set(30, 30, 20);
+    spotLight.shadow.camera.near = 2;
+    spotLight.shadow.camera.far = 50;
     spotLight.castShadow = true;
+    
+    spotLight.shadow.mapSize.width = 8000;  // default
+    spotLight.shadow.mapSize.height = 8000; // default
 
     scene.add(spotLight);
 
     var spotLight2 = new THREE.SpotLight(0xffffff);
     spotLight2.position.set(-30, 30, 10);
-    spotLight2.shadowCameraNear = 2;
-    spotLight2.shadowCameraFar = 50;
+    spotLight2.shadow.camera.near = 2;
+    spotLight2.shadow.camera.far = 50;
     spotLight2.castShadow = true;
 
-    scene.add(spotLight2);
+//    scene.add(spotLight2);
+
+    //Create a DirectionalLight and turn on shadows for the light
+    var light = new THREE.DirectionalLight( 0xffffff, 1, 100 );
+    light.position.set( 20, 30, 10 );   //default; light shining from top
+    light.castShadow = true;            // default false
+//    scene.add( light );
+
+    //Set up shadow properties for the light
+    light.shadow.mapSize.width = 5012;  // default
+    light.shadow.mapSize.height = 5012; // default
+    light.shadow.camera.near = 0.5;     // default
+    light.shadow.camera.far = 500       // default
 };
 
 /*
@@ -45840,7 +45958,7 @@ module.exports = {
     create: create
 }
 
-},{"three":18,"walipini-model-3d":6}],16:[function(require,module,exports){
+},{"three":19,"walipini-model-3d":7}],17:[function(require,module,exports){
 /*!
   * domready (c) Dustin Diaz 2014 - License MIT
   */
@@ -45872,7 +45990,7 @@ module.exports = {
 
 });
 
-},{}],17:[function(require,module,exports){
+},{}],18:[function(require,module,exports){
 module.exports = function( THREE ) {
 	/**
 	 * @author qiao / https://github.com/qiao
@@ -46894,6 +47012,6 @@ module.exports = function( THREE ) {
 	return OrbitControls;
 };
 
-},{}],18:[function(require,module,exports){
-arguments[4][12][0].apply(exports,arguments)
-},{"dup":12}]},{},[13]);
+},{}],19:[function(require,module,exports){
+arguments[4][13][0].apply(exports,arguments)
+},{"dup":13}]},{},[14]);
